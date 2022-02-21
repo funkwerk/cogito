@@ -1,3 +1,5 @@
-/tools/
+/tools/*
+!/tools/.keep
+
 /build/
 /node_modules/

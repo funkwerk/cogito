@@ -7,6 +7,7 @@ BINARY = 'build/cogito'
 ARGUMENTS = [
   "-of=#{BINARY}",
   '-I=src',
+  '-I=tools/dmd2/src/dmd',
   'src/cogito/visitor.d',
   'src/main.d',
   'build/dmd.a'
@@ -20,27 +21,30 @@ end
 
 def frontend_arguments
   versions = make_arguments 'version', ['MARS', 'NoMain']
-  string_imports = make_arguments 'J', ['.', '/usr/include/dmd/dmd/res']
+  string_imports = make_arguments 'J', ['.', './tools/dmd2/src/dmd/dmd/res']
 
   arguments = versions + string_imports
   arguments << '-od=build'
 end
 
-def build_frontend
+def build_frontend(version = 'debug')
+  frontend_includes = Dir.glob('./tools/dmd2/src/dmd/dmd/**/*.d').to_a
   frontend_includes = Dir.glob('/usr/include/dmd/dmd/**/*.d').to_a
-  arguments = frontend_arguments + ['-of=dmd.a'] + frontend_includes
+  arguments = frontend_arguments +
+    ['-I=tools/dmd2/src/dmd', '-of=dmd.a'] +
+    frontend_includes
 
   Dir.mkdir 'build' unless Dir.exist? 'build'
 
-  system('dmd', '-debug', '-lib', *arguments, exception: true)
+  system('dmd', "-#{version}", '-lib', *arguments, exception: true)
 end
 
-def build
+def build(version = 'debug')
   arguments = frontend_arguments + ARGUMENTS
 
   Dir.mkdir 'build' unless Dir.exist? 'build'
 
-  system('dmd', '-debug', *arguments, exception: true)
+  system('dmd', "-#{version}", *arguments, exception: true)
 end
 
 def build_tests
@@ -55,6 +59,9 @@ case ARGV.fetch(0, 'd')
 when 'd'
   build_frontend
   build
+when 'release'
+  build_frontend 'release'
+  build 'release'
 when 'run'
   build
   system BINARY, 'sample/sample.d'
