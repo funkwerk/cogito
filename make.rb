@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
-#
+
 require 'pathname'
 
 BINARY = 'build/cogito'
@@ -8,8 +8,6 @@ ARGUMENTS = [
   "-of=#{BINARY}",
   '-I=src',
   '-I=tools/dmd2/src/dmd',
-  'src/cogito/visitor.d',
-  'src/main.d',
   'build/dmd.a'
 ]
 
@@ -40,7 +38,7 @@ def build_frontend(version = 'debug')
 end
 
 def build(version = 'debug')
-  arguments = frontend_arguments + ARGUMENTS
+  arguments = frontend_arguments + Dir.glob('src/**/*.d') + ARGUMENTS
 
   Dir.mkdir 'build' unless Dir.exist? 'build'
 
@@ -48,11 +46,14 @@ def build(version = 'debug')
 end
 
 def build_tests
-  arguments = frontend_arguments + ARGUMENTS
+  arguments = frontend_arguments +
+    Dir.glob('src/cogito/*.d') +
+    Dir.glob('tests/**/*.d') +
+    ARGUMENTS
 
   Dir.mkdir 'build' unless Dir.exist? 'build'
 
-  system('dmd', '-unittest', *arguments, exception: true)
+  system('dmd', '-unittest', '-main', *arguments, exception: true)
 end
 
 case ARGV.fetch(0, 'd')
@@ -67,7 +68,7 @@ when 'run'
   system BINARY, 'sample/sample.d'
 when 'test'
   build_tests
-  system BINARY, 'sample/sample.d'
+  system BINARY
 when 'ts'
   system('npx', 'cognitive-complexity-ts-json', 'sample/sample.ts')
 else

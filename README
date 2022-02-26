@@ -1,3 +1,5 @@
+[![License](https://img.shields.io/badge/license-MPL_2.0-blue.svg)](https://raw.githubusercontent.com/funkwerk/mocked/master/LICENSE)
+
 # Installing and usage
 
 Extract dmd.2.098.1.linux.tar.xz into tools, so you have the tools/dmd2

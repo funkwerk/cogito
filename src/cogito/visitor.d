@@ -1,27 +1,11 @@
 module cogito.visitor;
 
-import dmd.identifier;
 import dmd.astcodegen;
-import dmd.globals;
 import dmd.parsetimevisitor;
 import dmd.visitor;
 
+import cogito.meter;
 import std.stdio;
-
-struct Meter
-{
-    Identifier name;
-    Loc location;
-    uint score = 0;
-}
-
-void printMeter(const Meter meter)
-{
-    printf("\x1b[36m%s:\x1b[0m\n", meter.location.filename);
-    writefln("  %s:", meter.name);
-    writeln("    Location (line): ", meter.location.linnum);
-    writeln("    Score: ", meter.score);
-}
 
 extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 {
