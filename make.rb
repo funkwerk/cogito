@@ -19,7 +19,7 @@ end
 
 def frontend_arguments
   versions = make_arguments 'version', ['MARS', 'NoMain']
-  string_imports = make_arguments 'J', ['.', './tools/dmd2/src/dmd/dmd/res']
+  string_imports = make_arguments 'J', ['./include', './tools/dmd2/src/dmd/dmd/res']
 
   arguments = versions + string_imports
   arguments << '-od=build'

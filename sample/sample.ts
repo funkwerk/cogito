@@ -1,5 +1,8 @@
 function f () {
   if (true) {
-  } else if (false) {
+        if (false)
+        {
+        }
+  } else {
   }
 }
