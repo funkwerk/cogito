@@ -6,7 +6,7 @@ void main(string[] args)
 {
     args.popFront;
 
-    const meter = runOnFiles(args);
+    auto meter = runOnFiles(args);
 
     printMeter(meter);
 }

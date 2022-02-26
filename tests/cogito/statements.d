@@ -5,7 +5,7 @@ import cogito;
 // if
 unittest
 {
-    const meter = runOnCode(q{
+    auto meter = runOnCode(q{
 void f()
 {
     if (true)
@@ -26,7 +26,7 @@ void f()
 // while
 unittest
 {
-    const meter = runOnCode(q{
+    auto meter = runOnCode(q{
 void f()
 {
     if (true)
@@ -47,7 +47,7 @@ void f()
 // else
 unittest
 {
-    const meter = runOnCode(q{
+    auto meter = runOnCode(q{
 void f()
 {
     if (true)
@@ -65,7 +65,7 @@ void f()
 // Simple else-if
 unittest
 {
-    const meter = runOnCode(q{
+    auto meter = runOnCode(q{
 void f()
 {
     if (true)
@@ -83,7 +83,7 @@ void f()
 // Simple for
 unittest
 {
-    const meter = runOnCode(q{
+    auto meter = runOnCode(q{
 void f()
 {
     for (;;)

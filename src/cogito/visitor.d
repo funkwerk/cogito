@@ -4,6 +4,7 @@ import dmd.astcodegen;
 import dmd.parsetimevisitor;
 import dmd.visitor;
 
+import cogito.list;
 import cogito.meter;
 import std.stdio;
 
@@ -15,13 +16,13 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     alias visit = Visitor.visit;
     alias visit = SemanticTimeTransitiveVisitor.visit;
 
-    private uint depth = 0;
-    private Meter meter_;
+    private uint depth = 0U;
+    private List!Meter meter_;
 
     /**
      * Returns collected scores.
      */
-    @property const(Meter) meter() const
+    @property List!Meter meter()
     {
         return this.meter_;
     }
@@ -31,13 +32,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         debug writeln("Dsymbol ", symbol.ident);
 
         super.visit(symbol);
-    }
-
-    override void visit(AST.Parameter)
-    {
-        debug writeln("Parameter");
-
-        assert(false);
     }
 
     override void visit(AST.Statement s)
@@ -61,32 +55,14 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         super.visit(expression);
     }
 
-    override void visit(AST.TemplateParameter)
-    {
-        debug writeln("Template parameter");
-        assert(false);
-    }
-
-    override void visit(AST.Condition)
-    {
-        debug writeln("Condition");
-        assert(false);
-    }
-
-    override void visit(AST.Initializer)
-    {
-        debug writeln("Initializer");
-        assert(false);
-    }
-
     override void visit(AST.IfStatement s)
     {
         if (s.elsebody is null || !s.elsebody.isIfStatement) {
-            this.meter_.score += this.depth;
+            this.meter_.back.score += this.depth;
         }
         if (s.elsebody !is null && !s.elsebody.isIfStatement)
         {
-            ++this.meter_.score;
+            ++this.meter_.back.score;
         }
 
         ++this.depth;
@@ -111,7 +87,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     private void stepInLoop(Statement)(Statement s)
     {
-         this.meter_.score += this.depth;
+         this.meter_.back.score += this.depth;
 
         ++this.depth;
         super.visit(s);
@@ -154,7 +130,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     {
         debug writeln("Function declaration ", s);
 
-        this.meter_ = Meter(s.ident, s.loc);
+        this.meter_.insert(Meter(s.ident, s.loc));
 
         ++this.depth;
         super.visit(s);

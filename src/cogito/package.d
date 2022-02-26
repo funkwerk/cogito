@@ -3,10 +3,11 @@ module cogito;
 import dmd.frontend;
 import dmd.astcodegen;
 
+public import cogito.list;
 public import cogito.meter;
 public import cogito.visitor;
 
-const(Meter) runOnFiles(string[] args)
+Source runOnFiles(string[] args)
 {
     initialize();
     scope (exit)
@@ -20,10 +21,10 @@ const(Meter) runOnFiles(string[] args)
     // Check for errors.
     tree[0].accept(visitor);
 
-    return visitor.meter;
+    return Source(visitor.meter, args[0]);
 }
 
-const(Meter) runOnCode(string code)
+Source runOnCode(string code)
 {
     initialize();
     scope (exit)
@@ -37,5 +38,5 @@ const(Meter) runOnCode(string code)
     // Check for errors.
     tree[0].accept(visitor);
 
-    return visitor.meter;
+    return Source(visitor.meter);
 }
