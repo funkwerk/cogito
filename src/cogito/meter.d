@@ -8,17 +8,38 @@ import cogito.list;
 import std.algorithm;
 import std.stdio;
 
+private mixin template Ruler()
+{
+    uint ownScore = 0;
+    List!Meter inner;
+
+    @disable this();
+
+    public uint score()
+    {
+        return reduce!((accum, x) => accum + x.ownScore)(0, this.inner[]);
+    }
+}
+
 struct Meter
 {
     Identifier name;
     Loc location;
-    uint score = 0;
-    List!Meter list;
+
+    @disable this();
+
+    public this(Identifier name, Loc location, uint score = 0)
+    {
+        this.name = name;
+        this.location = location;
+        this.ownScore = score;
+    }
+
+    mixin Ruler!();
 }
 
 struct Source
 {
-    List!Meter inner;
     string filename;
 
     @disable this();
@@ -29,10 +50,7 @@ struct Source
         this.filename = filename;
     }
 
-    public uint score()
-    {
-        return reduce!((accum, x) => accum + x.score)(0, this.inner[]);
-    }
+    mixin Ruler!();
 }
 
 void printMeter(Source source)
@@ -47,7 +65,7 @@ void printMeter(Source source)
     {
         writefln("  %s:", m.name);
         writeln("    Location (line): ", m.location.linnum);
-        writeln("    Score: ", m.score);
+        writeln("    Score: ", m.ownScore);
         writeln();
     }
 }

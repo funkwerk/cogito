@@ -11,12 +11,12 @@ struct Range(T)
         this.entry = entry;
     }
 
-    public bool empty()
+    public bool empty() const
     {
         return this.entry is null;
     }
 
-    public T front()
+    public ref const(T) front() const
     in(this.entry !is null)
     {
         return this.entry.element;
@@ -31,8 +31,8 @@ struct Range(T)
 
 private struct Entry(T)
 {
-    T element;
-    Entry* next;
+    private T element;
+    private Entry!T* next;
 }
 
 struct List(T)

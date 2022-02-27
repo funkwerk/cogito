@@ -27,11 +27,11 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         return this.meter_;
     }
 
-    override void visit(AST.Dsymbol symbol)
+    override void visit(AST.StructDeclaration structDeclaration)
     {
-        debug writeln("Dsymbol ", symbol.ident);
+        debug writeln("struct {} ", structDeclaration.ident);
 
-        super.visit(symbol);
+        super.visit(structDeclaration);
     }
 
     override void visit(AST.Statement s)
@@ -58,11 +58,11 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     override void visit(AST.IfStatement s)
     {
         if (s.elsebody is null || !s.elsebody.isIfStatement) {
-            this.meter_.back.score += this.depth;
+            this.meter_.back.ownScore += this.depth;
         }
         if (s.elsebody !is null && !s.elsebody.isIfStatement)
         {
-            ++this.meter_.back.score;
+            ++this.meter_.back.ownScore;
         }
 
         ++this.depth;
@@ -87,7 +87,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     private void stepInLoop(Statement)(Statement s)
     {
-         this.meter_.back.score += this.depth;
+         this.meter_.back.ownScore += this.depth;
 
         ++this.depth;
         super.visit(s);
