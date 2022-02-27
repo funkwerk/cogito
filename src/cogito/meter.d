@@ -6,6 +6,8 @@ import dmd.globals;
 
 import cogito.list;
 import std.algorithm;
+import std.conv;
+import std.range;
 import std.stdio;
 
 private mixin template Ruler()
@@ -17,7 +19,8 @@ private mixin template Ruler()
 
     public uint score()
     {
-        return reduce!((accum, x) => accum + x.ownScore)(0, this.inner[]);
+        return this.ownScore
+            + reduce!((accum, x) => accum + x.score)(0, this.inner[]);
     }
 }
 
@@ -26,13 +29,37 @@ struct Meter
     Identifier name;
     Loc location;
 
-    @disable this();
-
     public this(Identifier name, Loc location, uint score = 0)
     {
         this.name = name;
         this.location = location;
         this.ownScore = score;
+    }
+
+    private void toString(void delegate(const(char)[]) sink, uint indentation)
+    {
+        const indentBytes = ' '.repeat(indentation * 2).array;
+        const nextIndentation = indentation + 1;
+        const nextIndentBytes = ' '.repeat(nextIndentation * 2).array;
+
+        sink(indentBytes);
+        sink(this.name.toString());
+        sink(":\n");
+        sink(nextIndentBytes);
+        sink("Location (line): ");
+        sink(to!string(this.location.linnum));
+        sink("\n");
+        sink(nextIndentBytes);
+        sink("Score: ");
+        sink(to!string(this.score));
+        sink("\n");
+
+        this.inner[].each!(meter => meter.toString(sink, nextIndentation));
+    }
+
+    void toString(void delegate(const(char)[]) sink)
+    {
+        toString(sink, 1);
     }
 
     mixin Ruler!();
@@ -41,8 +68,6 @@ struct Meter
 struct Source
 {
     string filename;
-
-    @disable this();
 
     public this(List!Meter inner, string filename = null)
     {
@@ -61,12 +86,9 @@ void printMeter(Source source)
     }
     writefln("\x1b[36m%s:\x1b[0m", source.filename);
 
-    foreach (const m; source.inner[])
+    foreach (m; source.inner[])
     {
-        writefln("  %s:", m.name);
-        writeln("    Location (line): ", m.location.linnum);
-        writeln("    Score: ", m.ownScore);
-        writeln();
+        m.toString(input => write(input));
     }
 }
 

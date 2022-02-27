@@ -11,12 +11,12 @@ struct Range(T)
         this.entry = entry;
     }
 
-    public bool empty() const
+    public bool empty()
     {
         return this.entry is null;
     }
 
-    public ref const(T) front() const
+    public ref T front()
     in(this.entry !is null)
     {
         return this.entry.element;
@@ -82,5 +82,11 @@ struct List(T)
     Range!T opSlice()
     {
         return Range!T(this.first);
+    }
+
+    void clear()
+    {
+        this.first = null;
+        this.last = null;
     }
 }

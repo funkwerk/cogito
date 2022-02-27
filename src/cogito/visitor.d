@@ -6,6 +6,7 @@ import dmd.visitor;
 
 import cogito.list;
 import cogito.meter;
+import std.algorithm;
 import std.stdio;
 
 extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
@@ -29,9 +30,25 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     override void visit(AST.StructDeclaration structDeclaration)
     {
-        debug writeln("struct {} ", structDeclaration.ident);
+        auto currentMeter = this.meter_;
 
+        this.meter.clear();
         super.visit(structDeclaration);
+
+        auto newMeter = Meter(structDeclaration.ident, structDeclaration.loc);
+
+        newMeter.inner = this.meter_;
+        currentMeter.insert(newMeter);
+        this.meter_ = currentMeter;
+    }
+
+    override void visit(ASTCodegen.FuncDeclaration functionDeclaration)
+    {
+        this.meter_.insert(Meter(functionDeclaration.ident, functionDeclaration.loc));
+
+        ++this.depth;
+        super.visit(functionDeclaration);
+        --this.depth;
     }
 
     override void visit(AST.Statement s)
@@ -124,17 +141,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         debug writeln("Function alis declaration ", s);
 
         super.visit(s);
-    }
-
-    override void visit(ASTCodegen.FuncDeclaration s)
-    {
-        debug writeln("Function declaration ", s);
-
-        this.meter_.insert(Meter(s.ident, s.loc));
-
-        ++this.depth;
-        super.visit(s);
-        --this.depth;
     }
 
     override void visit(ASTCodegen.SymbolDeclaration s)
