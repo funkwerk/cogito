@@ -1,6 +1,3 @@
 function f () {
-  if (true) {
-    if (false) {
-    }
-  }
+  return true && true && true;
 }

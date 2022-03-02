@@ -62,6 +62,16 @@ struct List(T)
         }
     }
 
+    void removeFront()
+    in(!empty)
+    {
+        this.first = this.first.next;
+        if (this.first is null)
+        {
+            this.last = null;
+        }
+    }
+
     @property bool empty()
     {
         return this.first is null;
@@ -86,7 +96,9 @@ struct List(T)
 
     void clear()
     {
-        this.first = null;
-        this.last = null;
+        while (!empty)
+        {
+            removeFront();
+        }
     }
 }

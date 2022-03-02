@@ -1,11 +1,6 @@
 module a;
 
-void f()
+bool f()
 {
-    if (true)
-    {
-        if (false)
-        {
-        }
-    }
+    return true && true;
 }

@@ -53,3 +53,21 @@ struct C
 
     assert(meter.score == 1);
 }
+
+// class function
+unittest
+{
+    auto meter = runOnCode(q{
+class C
+{
+    void f()
+    {
+        if (true)
+        {
+        }
+    }
+}
+    });
+
+    assert(meter.score == 1);
+}

@@ -90,6 +90,7 @@ void printMeter(Source source)
     {
         m.toString(input => write(input));
     }
+    writefln("  \x1b[36mScore: %s\x1b[0m", source.score);
 }
 
 void initialize()

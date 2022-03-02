@@ -3,6 +3,7 @@ module cogito.visitor;
 import dmd.astcodegen;
 import dmd.parsetimevisitor;
 import dmd.visitor;
+import dmd.tokens;
 
 import cogito.list;
 import cogito.meter;
@@ -19,6 +20,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     private uint depth = 0U;
     private List!Meter meter_;
+    private List!TOK stack;
 
     /**
      * Returns collected scores.
@@ -30,12 +32,22 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     override void visit(AST.StructDeclaration structDeclaration)
     {
+        stepInAggregate!(ASTCodegen.StructDeclaration)(structDeclaration);
+    }
+
+    override void visit(ASTCodegen.ClassDeclaration classDeclaration)
+    {
+        stepInAggregate!(ASTCodegen.ClassDeclaration)(classDeclaration);
+    }
+
+    private void stepInAggregate(Declaration : ASTCodegen.AggregateDeclaration)(Declaration declaration)
+    {
         auto currentMeter = this.meter_;
 
         this.meter.clear();
-        super.visit(structDeclaration);
+        super.visit(declaration);
 
-        auto newMeter = Meter(structDeclaration.ident, structDeclaration.loc);
+        auto newMeter = Meter(declaration.ident, declaration.loc);
 
         newMeter.inner = this.meter_;
         currentMeter.insert(newMeter);
@@ -65,11 +77,23 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         super.visit(type_);
     }
 
-    override void visit(AST.Expression expression)
+    override void visit(AST.BinExp expression)
     {
-        debug writeln("Expression");
+        if (expression.isLogicalExp()) {
+            // Each operator like && or || is counted once in an expression
+            // chain.
+            if (find(this.stack[], expression.op).empty)
+            {
+                ++this.meter_.back.ownScore;
+            }
+            this.stack.insert(expression.op);
+        }
 
         super.visit(expression);
+
+        if (expression.isLogicalExp()) {
+            this.stack.removeFront();
+        }
     }
 
     override void visit(AST.IfStatement s)
@@ -136,23 +160,9 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         super.visit(e);
     }
 
-    override void visit(ASTCodegen.FuncAliasDeclaration s)
-    {
-        debug writeln("Function alis declaration ", s);
-
-        super.visit(s);
-    }
-
     override void visit(ASTCodegen.SymbolDeclaration s)
     {
         debug writeln("Symbol declaration ", s);
-
-        super.visit(s);
-    }
-
-    override void visit(ASTCodegen.TypeInfoFunctionDeclaration s)
-    {
-        debug writeln("TypeInfo function declaration ", s);
 
         super.visit(s);
     }

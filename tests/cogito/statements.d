@@ -94,3 +94,19 @@ void f()
 
     assert(meter.score == 1);
 }
+
+// Simple do while
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    do
+    {
+    }
+    while (true);
+}
+    });
+
+    assert(meter.score == 1);
+}
