@@ -19,15 +19,41 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     alias visit = SemanticTimeTransitiveVisitor.visit;
 
     private uint depth = 0U;
-    private List!Meter meter_;
+    private Source source_;
     private List!TOK stack;
+
+    this()
+    {
+        this.source_ = Source(List!Meter());
+    }
 
     /**
      * Returns collected scores.
      */
-    @property List!Meter meter()
+    @property ref List!Meter meter()
     {
-        return this.meter_;
+        return this.source_.inner;
+    }
+
+    /**
+     * Returns collected source file score.
+     */
+    @property ref Source source()
+    {
+        return this.source_;
+    }
+
+    /**
+     * Increases the score in the current or the top-level scope.
+     */
+    private void increase(uint by = 1U)
+    {
+        if (this.meter.empty)
+        {
+            this.source.ownScore += by;
+        } else {
+            this.meter.back.ownScore += by;
+        }
     }
 
     override void visit(AST.StructDeclaration structDeclaration)
@@ -42,21 +68,21 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     private void stepInAggregate(Declaration : ASTCodegen.AggregateDeclaration)(Declaration declaration)
     {
-        auto currentMeter = this.meter_;
+        auto currentMeter = this.meter;
 
         this.meter.clear();
         super.visit(declaration);
 
         auto newMeter = Meter(declaration.ident, declaration.loc);
 
-        newMeter.inner = this.meter_;
+        newMeter.inner = this.meter;
         currentMeter.insert(newMeter);
-        this.meter_ = currentMeter;
+        this.meter = currentMeter;
     }
 
     override void visit(ASTCodegen.FuncDeclaration functionDeclaration)
     {
-        this.meter_.insert(Meter(functionDeclaration.ident, functionDeclaration.loc));
+        this.meter.insert(Meter(functionDeclaration.ident, functionDeclaration.loc));
 
         ++this.depth;
         super.visit(functionDeclaration);
@@ -84,7 +110,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
             // chain.
             if (find(this.stack[], expression.op).empty)
             {
-                ++this.meter_.back.ownScore;
+                increase;
             }
             this.stack.insert(expression.op);
         }
@@ -99,15 +125,24 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     override void visit(AST.IfStatement s)
     {
         if (s.elsebody is null || !s.elsebody.isIfStatement) {
-            this.meter_.back.ownScore += this.depth;
+            increase(this.depth);
         }
         if (s.elsebody !is null && !s.elsebody.isIfStatement)
         {
-            ++this.meter_.back.ownScore;
+            increase;
         }
 
         ++this.depth;
         super.visit(s);
+        --this.depth;
+    }
+
+    override void visit(ASTCodegen.StaticIfDeclaration declaration)
+    {
+        increase(max(this.depth, 1));
+
+        ++this.depth;
+        super.visit(declaration);
         --this.depth;
     }
 
@@ -128,23 +163,23 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     private void stepInLoop(Statement)(Statement s)
     {
-         this.meter_.back.ownScore += this.depth;
+         increase(this.depth);
 
         ++this.depth;
         super.visit(s);
         --this.depth;
    }
 
+    override void visit(ASTCodegen.Module moduleDeclaration)
+    {
+        this.source_.filename = moduleDeclaration.ident.toString.idup;
+
+        super.visit(moduleDeclaration);
+    }
+
     /***********************************************
      * Additional overrides present in the parent. *
      ***********************************************/
-
-    override void visit(ASTCodegen.DelegatePtrExp e)
-    {
-        debug writeln("Delegate pointer expression ", e);
-
-        super.visit(e);
-    }
 
     override void visit(ASTCodegen.DelegateExp e)
     {
@@ -158,12 +193,5 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         debug writeln("Delegate funcptr expression ", e);
 
         super.visit(e);
-    }
-
-    override void visit(ASTCodegen.SymbolDeclaration s)
-    {
-        debug writeln("Symbol declaration ", s);
-
-        super.visit(s);
     }
 }

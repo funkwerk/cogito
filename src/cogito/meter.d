@@ -24,10 +24,35 @@ private mixin template Ruler()
     }
 }
 
-struct Meter
+struct ScoreScope
 {
     Identifier name;
     Loc location;
+}
+
+struct Meter
+{
+    ScoreScope scoreScope;
+
+    @property ref Identifier name() return
+    {
+        return this.scoreScope.name;
+    }
+
+    @property void name(ref Identifier name)
+    {
+        this.scoreScope.name = name;
+    }
+
+    @property ref Loc location() return
+    {
+        return this.scoreScope.location;
+    }
+
+    @property void name(ref Loc location)
+    {
+        this.scoreScope.location = location;
+    }
 
     public this(Identifier name, Loc location, uint score = 0)
     {
@@ -69,7 +94,7 @@ struct Source
 {
     string filename;
 
-    public this(List!Meter inner, string filename = null)
+    public this(List!Meter inner, string filename = "main")
     {
         this.inner = inner;
         this.filename = filename;
@@ -80,15 +105,14 @@ struct Source
 
 void printMeter(Source source)
 {
-    if (source.inner.empty)
-    {
-        return;
-    }
     writefln("\x1b[36m%s:\x1b[0m", source.filename);
 
-    foreach (m; source.inner[])
+    if (source.inner.empty)
     {
-        m.toString(input => write(input));
+        foreach (m; source.inner[])
+        {
+            m.toString(input => write(input));
+        }
     }
     writefln("  \x1b[36mScore: %s\x1b[0m", source.score);
 }

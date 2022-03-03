@@ -21,7 +21,7 @@ Source runOnFiles(string[] args)
     // Check for errors.
     tree[0].accept(visitor);
 
-    return Source(visitor.meter, args[0]);
+    return visitor.source;
 }
 
 Source runOnCode(string code)
@@ -38,5 +38,5 @@ Source runOnCode(string code)
     // Check for errors.
     tree[0].accept(visitor);
 
-    return Source(visitor.meter);
+    return visitor.source;
 }
