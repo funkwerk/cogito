@@ -14,3 +14,16 @@ static if (true)
 
     assert(meter.score == 1);
 }
+
+// Top-level static foreach
+unittest
+{
+    auto meter = runOnCode(q{
+static foreach (const a; 0..1)
+{
+    alias Integer = int;
+}
+    });
+
+    assert(meter.score == 1);
+}

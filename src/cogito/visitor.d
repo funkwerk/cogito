@@ -137,28 +137,42 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         --this.depth;
     }
 
-    override void visit(ASTCodegen.StaticIfDeclaration declaration)
+    override void visit(ASTCodegen.StaticIfDeclaration ifDeclaration)
     {
         increase(max(this.depth, 1));
 
         ++this.depth;
-        super.visit(declaration);
+        super.visit(ifDeclaration);
         --this.depth;
     }
 
-    override void visit(AST.WhileStatement s)
+    override void visit(ASTCodegen.StaticForeachDeclaration foreachDeclaration)
     {
-        stepInLoop(s);
+        increase(max(this.depth, 1));
+
+        ++this.depth;
+        super.visit(foreachDeclaration);
+        --this.depth;
     }
 
-    override void visit(AST.DoStatement s)
+    override void visit(AST.WhileStatement whileStatement)
     {
-        stepInLoop(s);
+        stepInLoop(whileStatement);
     }
 
-    override void visit(AST.ForStatement s)
+    override void visit(AST.DoStatement doStatement)
     {
-        stepInLoop(s);
+        stepInLoop(doStatement);
+    }
+
+    override void visit(AST.ForStatement forStatement)
+    {
+        stepInLoop(forStatement);
+    }
+
+    override void visit(ASTCodegen.ForeachStatement foreachStatement)
+    {
+        stepInLoop(foreachStatement);
     }
 
     private void stepInLoop(Statement)(Statement s)
@@ -175,23 +189,5 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         this.source_.filename = moduleDeclaration.ident.toString.idup;
 
         super.visit(moduleDeclaration);
-    }
-
-    /***********************************************
-     * Additional overrides present in the parent. *
-     ***********************************************/
-
-    override void visit(ASTCodegen.DelegateExp e)
-    {
-        debug writeln("Delegate expression ", e);
-
-        super.visit(e);
-    }
-
-    override void visit(ASTCodegen.DelegateFuncptrExp e)
-    {
-        debug writeln("Delegate funcptr expression ", e);
-
-        super.visit(e);
     }
 }

@@ -110,3 +110,18 @@ void f()
 
     assert(meter.score == 1);
 }
+
+// Simple foreach
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    foreach (const x; xs)
+    {
+    }
+}
+    });
+
+    assert(meter.score == 1);
+}
