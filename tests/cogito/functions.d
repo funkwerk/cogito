@@ -2,6 +2,7 @@ module cogito.tests.functions;
 
 import cogito;
 import std.algorithm;
+import std.sumtype;
 
 // 2 functions
 unittest
@@ -15,7 +16,7 @@ void g()
 }
     });
 
-    assert(count(meter.inner[]) == 2);
+    assert(meter.tryMatch!((Source source) => count(source.inner[])) == 2);
 }
 
 // class function
@@ -33,7 +34,7 @@ class C
 }
     });
 
-    assert(meter.score == 1);
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
 // struct function
@@ -51,7 +52,7 @@ struct C
 }
     });
 
-    assert(meter.score == 1);
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
 // class function
@@ -69,5 +70,5 @@ class C
 }
     });
 
-    assert(meter.score == 1);
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
 }

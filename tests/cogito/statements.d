@@ -1,6 +1,7 @@
 module cogito.tests.statements;
 
 import cogito;
+import std.sumtype;
 
 // if
 unittest
@@ -20,7 +21,7 @@ void f()
 }
     });
 
-    assert(meter.score == 6);
+    assert(meter.tryMatch!((Source source) => source.score) == 6);
 }
 
 // while
@@ -41,7 +42,7 @@ void f()
 }
     });
 
-    assert(meter.score == 6);
+    assert(meter.tryMatch!((Source source) => source.score) == 6);
 }
 
 // else
@@ -59,7 +60,7 @@ void f()
 }
     });
 
-    assert(meter.score == 2);
+    assert(meter.tryMatch!((Source source) => source.score) == 2);
 }
 
 // Simple else-if
@@ -77,7 +78,7 @@ void f()
 }
     });
 
-    assert(meter.score == 2);
+    assert(meter.tryMatch!((Source source) => source.score) == 2);
 }
 
 // Simple for
@@ -92,7 +93,7 @@ void f()
 }
     });
 
-    assert(meter.score == 1);
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
 // Simple do while
@@ -108,7 +109,7 @@ void f()
 }
     });
 
-    assert(meter.score == 1);
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
 // Simple foreach
@@ -123,5 +124,5 @@ void f()
 }
     });
 
-    assert(meter.score == 1);
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
 }

@@ -66,6 +66,7 @@ when 'release'
 when 'run'
   build
   system BINARY, 'sample/sample.d'
+  exit $?.exitstatus
 when 'test'
   build_tests
   system BINARY

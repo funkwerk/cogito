@@ -2,41 +2,55 @@ module cogito;
 
 import dmd.frontend;
 import dmd.astcodegen;
+import dmd.errors;
+import dmd.globals;
 
 public import cogito.list;
 public import cogito.meter;
 public import cogito.visitor;
 
-Source runOnFiles(string[] args)
+Result runOnFiles(string[] args)
 {
     initialize();
+    LocalHandler localHandler;
+    diagnosticHandler = &localHandler.handler;
+
     scope (exit)
     {
+        diagnosticHandler = null;
         deinitialize();
     }
-
     auto tree = parseModule!ASTCodegen(args[0]);
+
+    if (tree.diagnostics.hasErrors())
+    {
+        return typeof(return)(localHandler.errors);
+    }
     auto visitor = new CognitiveVisitor();
 
-    // Check for errors.
-    tree[0].accept(visitor);
+    tree.module_.accept(visitor);
 
-    return visitor.source;
+    return typeof(return)(visitor.source);
 }
 
-Source runOnCode(string code)
+Result runOnCode(string code)
 {
     initialize();
+    LocalHandler localHandler;
     scope (exit)
     {
+        diagnosticHandler = null;
         deinitialize();
     }
-
     auto tree = parseModule!ASTCodegen("app.d", code);
+
+    if (tree.diagnostics.hasErrors())
+    {
+        return typeof(return)(localHandler.errors);
+    }
     auto visitor = new CognitiveVisitor();
 
-    // Check for errors.
-    tree[0].accept(visitor);
+    tree.module_.accept(visitor);
 
-    return visitor.source;
+    return typeof(return)(visitor.source);
 }

@@ -1,14 +1,20 @@
 module cogito.meter;
 
+import core.stdc.stdarg;
+import core.stdc.stdio : fputc, fputs, fprintf, stderr;
 import dmd.frontend;
 import dmd.identifier;
 import dmd.globals;
+import dmd.console;
+import dmd.root.outbuffer;
 
 import cogito.list;
 import std.algorithm;
 import std.conv;
 import std.range;
-import std.stdio;
+import std.stdio : write, writefln;
+import std.typecons;
+import std.sumtype;
 
 private mixin template Ruler()
 {
@@ -117,6 +123,67 @@ void printMeter(Source source)
     writefln("  \x1b[36mScore: %s\x1b[0m", source.score);
 }
 
+void printErrors(List!CognitiveError errors)
+{
+    foreach (error; errors[])
+    {
+        auto location = error.location.toChars();
+
+        if (*location)
+        {
+            fprintf(stderr, "%s: ", location);
+        }
+        fputs(error.header, stderr);
+
+        fputs(error.message.peekChars(), stderr);
+        fputc('\n', stderr);
+    }
+}
+
+struct CognitiveError
+{
+    Loc location;
+    Color headerColor;
+    const(char)* header;
+    RefCounted!OutBuffer message;
+}
+
+struct LocalHandler
+{
+    List!CognitiveError errors;
+
+    bool handler(const ref Loc location,
+        Color headerColor,
+        const(char)* header,
+        const(char)* messageFormat,
+        va_list args,
+        const(char)* prefix1,
+        const(char)* prefix2) nothrow
+    {
+        CognitiveError error;
+
+        error.location = location;
+        error.headerColor = headerColor;
+        error.header = header;
+
+        if (prefix1)
+        {
+            error.message.writestring(prefix1);
+            error.message.writestring(" ");
+        }
+        if (prefix2)
+        {
+            error.message.writestring(prefix2);
+            error.message.writestring(" ");
+        }
+        error.message.vprintf(messageFormat, args);
+
+        this.errors.insert(error);
+
+        return true;
+    }
+}
+
 void initialize()
 {
     initDMD(null, [],
@@ -135,3 +202,5 @@ void deinitialize()
 {
     deinitializeDMD();
 }
+
+alias Result = SumType!(List!CognitiveError, Source);

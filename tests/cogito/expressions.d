@@ -1,6 +1,7 @@
 module cogito.tests.expressions;
 
 import cogito;
+import std.sumtype;
 
 // No conditions
 unittest
@@ -12,7 +13,7 @@ bool f()
 }
     });
 
-    assert(meter.score == 0);
+    assert(meter.tryMatch!((Source source) => source.score) == 0);
 }
 
 // Single &&
@@ -25,7 +26,7 @@ bool f()
 }
     });
 
-    assert(meter.score == 1);
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
 // && row
@@ -38,5 +39,5 @@ bool f()
 }
     });
 
-    assert(meter.score == 1);
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
 }

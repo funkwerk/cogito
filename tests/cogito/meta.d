@@ -1,6 +1,7 @@
 module cogito.tests.meta;
 
 import cogito;
+import std.sumtype;
 
 // Top-level static if
 unittest
@@ -12,7 +13,7 @@ static if (true)
 }
     });
 
-    assert(meter.score == 1);
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
 // Top-level static foreach
@@ -25,5 +26,5 @@ static foreach (const a; 0..1)
 }
     });
 
-    assert(meter.score == 1);
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
