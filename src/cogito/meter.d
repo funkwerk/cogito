@@ -113,7 +113,7 @@ void printMeter(Source source)
 {
     writefln("\x1b[36m%s:\x1b[0m", source.filename);
 
-    if (source.inner.empty)
+    if (!source.inner.empty)
     {
         foreach (m; source.inner[])
         {
