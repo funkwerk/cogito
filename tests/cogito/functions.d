@@ -126,3 +126,21 @@ struct C
 
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
+
+// Postblit constructor
+unittest
+{
+    auto meter = runOnCode(q{
+struct C
+{
+    this(this)
+    {
+        if (true)
+        {
+        }
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}

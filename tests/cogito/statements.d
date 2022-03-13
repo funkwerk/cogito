@@ -127,6 +127,21 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
+// Simple reverse foreach
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    foreach_reverse (const x; xs)
+    {
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
+
 // try-catch
 unittest
 {

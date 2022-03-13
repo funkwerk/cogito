@@ -257,4 +257,11 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
         stepInStatementWithLabel(statement);
     }
+
+    override void visit(ASTCodegen.PostBlitDeclaration declaration)
+    {
+        debug writeln("Blit ", declaration);
+
+        stepInFunction(declaration);
+    }
 }
