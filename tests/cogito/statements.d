@@ -126,3 +126,86 @@ void f()
 
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
+
+// try-catch
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    try
+    {
+    }
+    catch (Exception)
+    {
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
+
+// Nested statement in try
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    try
+    {
+        if (true)
+        {
+        }
+    }
+    catch (Exception)
+    {
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 2);
+}
+
+// Nested statement in catch
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    try
+    {
+    }
+    catch (Exception)
+    {
+        if (true)
+        {
+        }
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 3);
+}
+
+// Switch statement
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    char c;
+
+    switch (c)
+    {
+        case 'a':
+            break;
+        case 'b':
+            break;
+        default:
+            assert(false);
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}

@@ -72,3 +72,57 @@ class C
 
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
+
+// Constructor
+unittest
+{
+    auto meter = runOnCode(q{
+class C
+{
+    this()
+    {
+        if (true)
+        {
+        }
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
+
+// Class destructor
+unittest
+{
+    auto meter = runOnCode(q{
+class C
+{
+    ~this()
+    {
+        if (true)
+        {
+        }
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
+
+// Struct destructor
+unittest
+{
+    auto meter = runOnCode(q{
+struct C
+{
+    ~this()
+    {
+        if (true)
+        {
+        }
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}

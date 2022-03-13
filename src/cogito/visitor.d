@@ -1,5 +1,6 @@
 module cogito.visitor;
 
+import dmd.ast_node;
 import dmd.astcodegen;
 import dmd.parsetimevisitor;
 import dmd.visitor;
@@ -82,10 +83,22 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     override void visit(ASTCodegen.FuncDeclaration functionDeclaration)
     {
-        this.meter.insert(Meter(functionDeclaration.ident, functionDeclaration.loc));
+        stepInFunction(functionDeclaration);
+    }
+
+    override void visit(ASTCodegen.DtorDeclaration declaration)
+    {
+        debug writeln("Destructor ", declaration);
+
+        stepInFunction(declaration);
+    }
+
+    private void stepInFunction(T : ASTCodegen.FuncDeclaration)(T declaration)
+    {
+        this.meter.insert(Meter(declaration.ident, declaration.loc));
 
         ++this.depth;
-        super.visit(functionDeclaration);
+        super.visit(declaration);
         --this.depth;
     }
 
@@ -139,19 +152,20 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     override void visit(ASTCodegen.StaticIfDeclaration ifDeclaration)
     {
-        increase(max(this.depth, 1));
-
-        ++this.depth;
-        super.visit(ifDeclaration);
-        --this.depth;
+        stepInStaticDeclaration(ifDeclaration);
     }
 
     override void visit(ASTCodegen.StaticForeachDeclaration foreachDeclaration)
     {
+        stepInStaticDeclaration(foreachDeclaration);
+    }
+
+    private void stepInStaticDeclaration(T : ASTCodegen.Dsymbol)(T declaration)
+    {
         increase(max(this.depth, 1));
 
         ++this.depth;
-        super.visit(foreachDeclaration);
+        super.visit(declaration);
         --this.depth;
     }
 
@@ -175,12 +189,12 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         stepInLoop(foreachStatement);
     }
 
-    private void stepInLoop(Statement)(Statement s)
+    private void stepInLoop(T : ASTNode)(T statement)
     {
          increase(this.depth);
 
         ++this.depth;
-        super.visit(s);
+        super.visit(statement);
         --this.depth;
    }
 
@@ -189,5 +203,35 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         this.source_.filename = moduleDeclaration.ident.toString.idup;
 
         super.visit(moduleDeclaration);
+    }
+
+    override void visit(ASTCodegen.CondExp expression)
+    {
+        debug writeln("Ternary operator ", expression);
+
+        stepInLoop(expression);
+    }
+
+    override void visit(ASTCodegen.SwitchStatement statement)
+    {
+        stepInLoop(statement);
+    }
+
+    override void visit(ASTCodegen.TryCatchStatement statement)
+    {
+        debug writeln("try-catch statement ", statement);
+
+        if (statement._body)
+        {
+            increase(this.depth);
+
+            statement._body.accept(this);
+        }
+        foreach (catch_; *statement.catches)
+        {
+            ++this.depth;
+            this.visit(catch_);
+            --this.depth;
+        }
     }
 }
