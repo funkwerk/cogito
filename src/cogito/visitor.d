@@ -234,4 +234,27 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
             --this.depth;
         }
     }
+
+    override void visit(ASTCodegen.BreakStatement statement)
+    {
+        debug writeln("Break ", statement.ident);
+
+        stepInStatementWithLabel(statement);
+    }
+
+    private void stepInStatementWithLabel(T : ASTCodegen.Statement)(T statement)
+    {
+        if (statement.ident !is null)
+        {
+            increase;
+        }
+        super.visit(statement);
+    }
+
+    override void visit(ASTCodegen.ContinueStatement statement)
+    {
+        debug writeln("Label ", statement);
+
+        stepInStatementWithLabel(statement);
+    }
 }

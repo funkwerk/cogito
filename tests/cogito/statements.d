@@ -209,3 +209,45 @@ void f()
 
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
+
+// Break statement
+unittest
+{
+    auto meter = runOnCode(q{
+void f() {
+  WhileLabel: while (true) {
+    break WhileLabel;
+  }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 2);
+}
+
+// Continue with a label
+unittest
+{
+    auto meter = runOnCode(q{
+void f() {
+  WhileLabel: while (true) {
+    continue WhileLabel;
+  }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 2);
+}
+
+// Continue statement
+unittest
+{
+    auto meter = runOnCode(q{
+void f() {
+  WhileLabel: while (true) {
+    continue;
+  }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
