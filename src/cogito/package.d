@@ -20,7 +20,7 @@ Result runOnFiles(string[] args)
         diagnosticHandler = null;
         deinitialize();
     }
-    auto tree = parseModule!ASTCodegen(args[0]);
+    auto tree = parseModule!AST(args[0]);
 
     if (tree.diagnostics.hasErrors())
     {

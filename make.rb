@@ -27,7 +27,6 @@ end
 
 def build_frontend(version = 'debug')
   frontend_includes = Dir.glob('./tools/dmd2/src/dmd/dmd/**/*.d').to_a
-  frontend_includes = Dir.glob('/usr/include/dmd/dmd/**/*.d').to_a
   arguments = frontend_arguments +
     ['-I=tools/dmd2/src/dmd', '-of=dmd.a'] +
     frontend_includes
