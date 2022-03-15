@@ -265,31 +265,33 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         super.visit(statement);
     }
 
-    override void visit(AST.SharedStaticCtorDeclaration statement)
+    override void visit(AST.SharedStaticCtorDeclaration declaration)
     {
-        debug writeln("Shared static constructor declaration ", statement);
+        debug writeln("Shared static constructor declaration ", declaration);
 
-        super.visit(statement);
+        stepInFunction!(AST.SharedStaticCtorDeclaration)(declaration);
     }
 
-    override void visit(AST.SharedStaticDtorDeclaration statement)
+    override void visit(AST.SharedStaticDtorDeclaration declaration)
     {
-        debug writeln("Shared static destructor declaration ", statement);
+        debug writeln("Shared static destructor declaration ", declaration);
 
-        super.visit(statement);
+        stepInFunction!(AST.SharedStaticDtorDeclaration)(declaration);
     }
 
     override void visit(AST.UnionDeclaration statement)
     {
         debug writeln(statement.stringof, ' ', statement);
 
+        // Interfaces are handled as StructDeclarations
         super.visit(statement);
     }
 
     override void visit(AST.InterfaceDeclaration statement)
     {
-        debug writeln(statement.stringof, ' ', statement);
+        debug writeln("Interface ", statement);
 
+        // Interfaces are handled as ClassDeclarations
         super.visit(statement);
     }
 
@@ -435,21 +437,51 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         }
     }
 
-    override void visit(AST.IfStatement s)
+    override void visit(AST.IfStatement statement)
     {
-        debug writeln("if statement ", s);
+        debug writeln("if statement ", statement);
 
-        if (s.elsebody is null || !s.elsebody.isIfStatement) {
+        statement.condition.accept(this);
+
+        if (statement.ifbody)
+        {
             increase(this.depth);
+
+            ++this.depth;
+            statement.ifbody.accept(this);
+            --this.depth;
         }
-        if (s.elsebody !is null && !s.elsebody.isIfStatement)
+        visitElseStatement(statement.elsebody);
+
+    }
+
+    private void visitElseStatement(AST.Statement statement)
+    {
+        if (statement is null)
+        {
+            return;
+        }
+        auto elseIf = statement.isIfStatement();
+        if (elseIf !is null)
+        {
+            if (elseIf.ifbody)
+            {
+                increase;
+
+                ++this.depth;
+                elseIf.ifbody.accept(this);
+                --this.depth;
+            }
+            visitStaticElseStatement(elseIf.elsebody);
+        }
+        else
         {
             increase;
-        }
 
-        ++this.depth;
-        super.visit(s);
-        --this.depth;
+            ++this.depth;
+            statement.accept(this);
+            --this.depth;
+        }
     }
 
     override void visit(AST.StaticIfDeclaration declaration)
@@ -511,7 +543,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     override void visit(AST.ConditionalStatement statement)
     {
-        debug writeln("Conditional statement ", statement, " ", this.depth);
+        debug writeln("Conditional statement ", statement);
 
         statement.condition.accept(this);
 

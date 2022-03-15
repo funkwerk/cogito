@@ -266,3 +266,30 @@ void f() {
 
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
+
+@("Multiple nested else-if statements")
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    if (true)
+    {
+        if (true)
+        {
+        }
+        else if (false)
+        {
+            if (true)
+            {
+            }
+        }
+    }
+    else
+    {
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 8);
+}

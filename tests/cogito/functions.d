@@ -73,6 +73,31 @@ class C
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
+@("Interface function")
+unittest
+{
+    auto meter = runOnCode(q{
+interface C
+{
+    void f();
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.inner[].front.name.toString) == "C");
+}
+
+@("Union")
+unittest
+{
+    auto meter = runOnCode(q{
+union U
+{
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.inner[].front.name.toString) == "U");
+}
+
 @("Constructor")
 unittest
 {
@@ -138,6 +163,36 @@ struct C
         if (true)
         {
         }
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
+
+@("Module static constructor")
+unittest
+{
+    auto meter = runOnCode(q{
+shared static this()
+{
+    if (true)
+    {
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
+
+@("Module static destructor")
+unittest
+{
+    auto meter = runOnCode(q{
+shared static ~this()
+{
+    if (true)
+    {
     }
 }
     });
