@@ -2,9 +2,6 @@
 	"authors": [
 		"Eugen Wissner"
 	],
-	"dependencies": {
-		"unit-threaded": "~>2.0.3"
-	},
 	"description": " Cognitive Complexity code metric for D",
 	"license": "MPL-2.0",
 	"name": "cogito",
@@ -20,5 +17,22 @@
 		"tools/dmd2/src/dmd/dmd/res",
 		"include"
 	],
-	"targetPath": "build"
+	"targetPath": "build",
+	"configurations": [
+		{
+			"name": "unittest",
+			"targetType": "executable",
+			"targetName": "test",
+			"sourcePaths": [
+				"tests"
+			],
+			"mainSourceFile": "tests/app.d",
+			"dependencies": {
+				"unit-threaded": "~>2.0.3"
+			},
+			"excludedSourceFiles": [
+				"src/main.d"
+			]
+		}
+	]
 }

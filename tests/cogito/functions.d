@@ -4,7 +4,7 @@ import cogito;
 import std.algorithm;
 import std.sumtype;
 
-// 2 functions
+@("2 functions")
 unittest
 {
     auto meter = runOnCode(q{
@@ -19,7 +19,7 @@ void g()
     assert(meter.tryMatch!((Source source) => count(source.inner[])) == 2);
 }
 
-// class function
+@("class function")
 unittest
 {
     auto meter = runOnCode(q{
@@ -37,7 +37,7 @@ class C
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// struct function
+@("struct function")
 unittest
 {
     auto meter = runOnCode(q{
@@ -55,7 +55,7 @@ struct C
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// class function
+@("class function")
 unittest
 {
     auto meter = runOnCode(q{
@@ -73,7 +73,7 @@ class C
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Constructor
+@("Constructor")
 unittest
 {
     auto meter = runOnCode(q{
@@ -91,7 +91,7 @@ class C
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Class destructor
+@("Class destructor")
 unittest
 {
     auto meter = runOnCode(q{
@@ -109,7 +109,7 @@ class C
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Struct destructor
+@("Struct destructor")
 unittest
 {
     auto meter = runOnCode(q{
@@ -127,7 +127,7 @@ struct C
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Postblit constructor
+@("Postblit constructor")
 unittest
 {
     auto meter = runOnCode(q{

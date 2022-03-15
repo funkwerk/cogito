@@ -55,13 +55,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         }
     }
 
-    override void visit(AST.Catch catch_)
-    {
-        debug writeln("Catch ", catch_);
-
-        super.visit(catch_);
-    }
-
     override void visit(AST.Dsymbol symbol)
     {
         debug printf("Symbol %s\n", symbol.toPrettyChars());
@@ -391,38 +384,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         stepInFunction(declaration);
     }
 
-    override void visit(AST.ConditionalStatement statement)
-    {
-        debug writeln("Conditional statement ", statement);
-
-        statement.condition.accept(this);
-
-        if (statement.ifbody)
-        {
-            ++this.depth;
-            statement.ifbody.accept(this);
-            --this.depth;
-        }
-        if (statement.elsebody !is null)
-        {
-            if (statement.elsebody.isIfStatement)
-            {
-                increase;
-            }
-            else
-            {
-                increase(this.depth);
-            }
-            ++this.depth;
-            statement.elsebody.accept(this);
-            --this.depth;
-        }
-        else
-        {
-            increase(this.depth);
-        }
-    }
-
     override void visit(AST.DtorDeclaration declaration)
     {
         debug writeln("Destructor ", declaration);
@@ -545,6 +506,52 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
                 elseDeclaration.accept(this);
                 --this.depth;
             }
+        }
+    }
+
+    override void visit(AST.ConditionalStatement statement)
+    {
+        debug writeln("Conditional statement ", statement, " ", this.depth);
+
+        statement.condition.accept(this);
+
+        if (statement.ifbody)
+        {
+            increase(this.depth);
+
+            ++this.depth;
+            statement.ifbody.accept(this);
+            --this.depth;
+        }
+        visitStaticElseStatement(statement.elsebody);
+    }
+
+    private void visitStaticElseStatement(AST.Statement statement)
+    {
+        if (statement is null)
+        {
+            return;
+        }
+        auto elseIf = statement.isConditionalStatement();
+        if (elseIf !is null)
+        {
+            if (elseIf.ifbody)
+            {
+                increase;
+
+                ++this.depth;
+                elseIf.ifbody.accept(this);
+                --this.depth;
+            }
+            visitStaticElseStatement(elseIf.elsebody);
+        }
+        else
+        {
+            increase;
+
+            ++this.depth;
+            statement.accept(this);
+            --this.depth;
         }
     }
 

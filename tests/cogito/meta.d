@@ -3,7 +3,7 @@ module cogito.tests.meta;
 import cogito;
 import std.sumtype;
 
-// Top-level static if
+@("Top-level static if")
 unittest
 {
     auto meter = runOnCode(q{
@@ -16,7 +16,7 @@ static if (true)
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Top-level static foreach
+@("Top-level static foreach")
 unittest
 {
     auto meter = runOnCode(q{
@@ -29,7 +29,7 @@ static foreach (const a; 0..1)
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Version block
+@("Version block")
 unittest
 {
     auto meter = runOnCode(q{
@@ -42,7 +42,7 @@ version (Version)
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Static if in a function
+@("Static if in a function")
 unittest
 {
     auto meter = runOnCode(q{
@@ -57,7 +57,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Static else declaration
+@("Static else declaration")
 unittest
 {
     auto meter = runOnCode(q{
@@ -72,7 +72,7 @@ else
     assert(meter.tryMatch!((Source source) => source.score) == 2);
 }
 
-// Static else-if declaration
+@("Static else-if declaration")
 unittest
 {
     auto meter = runOnCode(q{
@@ -87,7 +87,7 @@ else static if (false)
     assert(meter.tryMatch!((Source source) => source.score) == 2);
 }
 
-// Multiple nested static-else-if declarations
+@("Multiple nested static-else-if declarations")
 unittest
 {
     auto meter = runOnCode(q{
@@ -109,4 +109,31 @@ else
     });
 
     assert(meter.tryMatch!((Source source) => source.score) == 5);
+}
+
+@("Multiple nested static-else-if statements")
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    static if (true)
+    {
+        static if (true)
+        {
+        }
+        else static if (false)
+        {
+        }
+        else static if (false)
+        {
+        }
+    }
+    else
+    {
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 6);
 }

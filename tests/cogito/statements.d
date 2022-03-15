@@ -3,7 +3,7 @@ module cogito.tests.statements;
 import cogito;
 import std.sumtype;
 
-// if
+@("if")
 unittest
 {
     auto meter = runOnCode(q{
@@ -24,7 +24,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 6);
 }
 
-// while
+@("while")
 unittest
 {
     auto meter = runOnCode(q{
@@ -45,7 +45,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 6);
 }
 
-// else
+@("else")
 unittest
 {
     auto meter = runOnCode(q{
@@ -63,7 +63,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 2);
 }
 
-// Simple else-if
+@("Simple else-if")
 unittest
 {
     auto meter = runOnCode(q{
@@ -81,7 +81,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 2);
 }
 
-// Simple for
+@("Simple for")
 unittest
 {
     auto meter = runOnCode(q{
@@ -96,7 +96,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Simple do while
+@("Simple do while")
 unittest
 {
     auto meter = runOnCode(q{
@@ -112,7 +112,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Simple foreach
+@("Simple foreach")
 unittest
 {
     auto meter = runOnCode(q{
@@ -127,7 +127,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Simple reverse foreach
+@("Simple reverse foreach")
 unittest
 {
     auto meter = runOnCode(q{
@@ -142,7 +142,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// try-catch
+@("try-catch")
 unittest
 {
     auto meter = runOnCode(q{
@@ -160,7 +160,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Nested statement in try
+@("Nested statement in try")
 unittest
 {
     auto meter = runOnCode(q{
@@ -181,7 +181,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 2);
 }
 
-// Nested statement in catch
+@("Nested statement in catch")
 unittest
 {
     auto meter = runOnCode(q{
@@ -202,7 +202,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 3);
 }
 
-// Switch statement
+@("Switch statement")
 unittest
 {
     auto meter = runOnCode(q{
@@ -225,7 +225,7 @@ void f()
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-// Break statement
+@("Break statement")
 unittest
 {
     auto meter = runOnCode(q{
@@ -239,7 +239,7 @@ void f() {
     assert(meter.tryMatch!((Source source) => source.score) == 2);
 }
 
-// Continue with a label
+@("Continue with a label")
 unittest
 {
     auto meter = runOnCode(q{
@@ -253,7 +253,7 @@ void f() {
     assert(meter.tryMatch!((Source source) => source.score) == 2);
 }
 
-// Continue statement
+@("Continue statement")
 unittest
 {
     auto meter = runOnCode(q{

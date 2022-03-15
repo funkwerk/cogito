@@ -3,13 +3,8 @@
 
 require 'pathname'
 
+BIN_PATH = Pathname.new 'tools/dmd2/linux/bin64'
 BINARY = 'build/cogito'
-ARGUMENTS = [
-  "-of=#{BINARY}",
-  '-I=src',
-  '-I=tools/dmd2/src/dmd',
-  'build/dmd.a'
-]
 
 def make_arguments(name, arguments)
   arguments.map do |argument|
@@ -37,22 +32,23 @@ def build_frontend(version = 'debug')
 end
 
 def build(version = 'debug')
-  arguments = frontend_arguments + Dir.glob('src/**/*.d') + ARGUMENTS
+  arguments = frontend_arguments + Dir.glob('src/**/*.d') + [
+    "-of=#{BINARY}",
+    '-I=src',
+    '-I=tools/dmd2/src/dmd',
+    'build/dmd.a'
+  ]
 
   Dir.mkdir 'build' unless Dir.exist? 'build'
 
   system('dmd', "-#{version}", *arguments, exception: true)
 end
 
-def build_tests
-  arguments = frontend_arguments +
-    Dir.glob('src/cogito/*.d') +
-    Dir.glob('tests/**/*.d') +
-    ARGUMENTS
+def test
+  build_frontend unless File.exist? 'build/dmd.a'
 
-  Dir.mkdir 'build' unless Dir.exist? 'build'
-
-  system('dmd', '-unittest', '-main', *arguments, exception: true)
+  system((BIN_PATH + 'dub').to_s, 'build', '--build=unittest', exception: true)
+  system 'build/test', '-s'
 end
 
 case ARGV.fetch(0, 'd')
@@ -65,12 +61,12 @@ when 'release'
 when 'run'
   build
   system BINARY, 'sample/sample.d'
-  exit $?.exitstatus
 when 'test'
-  build_tests
-  system BINARY
+  test
 when 'ts'
   system('npx', 'cognitive-complexity-ts-json', 'sample/sample.ts')
 else
   raise "Command „#{ARGV[0]}“ doesn't exist"
 end
+
+exit $?.exitstatus

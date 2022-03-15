@@ -35,22 +35,25 @@ Result runOnFiles(string[] args)
 
 Result runOnCode(string code)
 {
-    initialize();
-    LocalHandler localHandler;
-    scope (exit)
+    synchronized
     {
-        diagnosticHandler = null;
-        deinitialize();
+        initialize();
+        LocalHandler localHandler;
+        scope (exit)
+        {
+            diagnosticHandler = null;
+            deinitialize();
+        }
+        auto tree = parseModule!ASTCodegen("app.d", code);
+
+        if (tree.diagnostics.hasErrors())
+        {
+            return typeof(return)(localHandler.errors);
+        }
+        auto visitor = new CognitiveVisitor();
+
+        tree.module_.accept(visitor);
+
+        return typeof(return)(visitor.source);
     }
-    auto tree = parseModule!ASTCodegen("app.d", code);
-
-    if (tree.diagnostics.hasErrors())
-    {
-        return typeof(return)(localHandler.errors);
-    }
-    auto visitor = new CognitiveVisitor();
-
-    tree.module_.accept(visitor);
-
-    return typeof(return)(visitor.source);
 }
