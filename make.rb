@@ -2,9 +2,9 @@
 # frozen_string_literal: true
 
 require 'pathname'
+require 'fileutils'
 
 BIN_PATH = Pathname.new 'tools/dmd2/linux/bin64'
-BINARY = 'build/cogito'
 
 def make_arguments(name, arguments)
   arguments.map do |argument|
@@ -32,37 +32,34 @@ def build_frontend(version = 'debug')
 end
 
 def build(version = 'debug')
-  arguments = frontend_arguments + Dir.glob('src/**/*.d') + [
-    "-of=#{BINARY}",
-    '-I=src',
-    '-I=tools/dmd2/src/dmd',
-    'build/dmd.a'
-  ]
+  build_frontend unless File.exist? 'build/dmd.a'
+  config = version == 'unittest' ? 'unittest' : 'executable'
 
-  Dir.mkdir 'build' unless Dir.exist? 'build'
-
-  system('dmd', "-#{version}", *arguments, exception: true)
+  p (BIN_PATH + 'dub').to_s
+  system((BIN_PATH + 'dub').to_s,
+    'build', "--build=#{version}",
+    "--config=#{config}",
+    exception: true)
 end
 
-def test
-  build_frontend unless File.exist? 'build/dmd.a'
+def clean
+  FileUtils.rm_f Dir.glob('build/*')
 
-  system((BIN_PATH + 'dub').to_s, 'build', '--build=unittest', exception: true)
-  system 'build/test', '-s'
+  system((BIN_PATH + 'dub').to_s, 'clean', exception: true)
 end
 
 case ARGV.fetch(0, 'd')
 when 'd'
-  build_frontend
+  clean
   build
 when 'release'
-  build_frontend 'release'
   build 'release'
 when 'run'
-  build
-  system BINARY, 'sample/sample.d', 'sample/sample1.d'
+  build 'debug'
+  system 'build/cogito', 'sample/sample.d'
 when 'test'
-  test
+  build 'unittest'
+  system 'build/test', '-s'
 when 'ts'
   system('npx', 'cognitive-complexity-ts-json', 'sample/sample.ts')
 else

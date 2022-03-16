@@ -4,19 +4,26 @@ import cogito.arguments;
 import std.algorithm;
 import std.sumtype;
 import std.stdio;
+import std.functional;
 
-int accumulateResult(int accumulator, Result result)
+int accumulateResult(Arguments arguments, int accumulator, Result result)
 {
-    return accumulator + match!(
+    auto nextResult = match!(
         (List!CognitiveError errors) {
             printErrors(errors);
             return 1;
         },
-        (Source source) {
-            printMeter(source);
-            return 0;
-        }
+        (Source source) => printMeter(source, arguments.threshold) ? 3 : 0
     )(result);
+    if (accumulator == 1 || nextResult == 1)
+    {
+        return 1;
+    }
+    else if (accumulator != 0)
+    {
+        return accumulator;
+    }
+    return nextResult;
 }
 
 int main(string[] args)
@@ -24,13 +31,19 @@ int main(string[] args)
     return parseArguments(args).match!(
         (ArgumentError error) {
             writeln(error);
+            writeln(help);
 
             return 2;
         },
         (Arguments arguments) {
+            if (arguments.help)
+            {
+                write(help);
+                return 0;
+            }
             auto meter = runOnFiles(arguments.files);
 
-            return meter.fold!accumulateResult(0) > 0 ? 1 : 0;
+            return meter.fold!(partial!(accumulateResult, arguments))(0);
         }
     );
 }

@@ -4,11 +4,24 @@ import std.algorithm;
 import std.range;
 import std.conv;
 import std.sumtype;
+import std.typecons;
+
+enum string help = q"HELP
+Usage: cogito [OPTION…] SOURCE…
+    --threshold NUMBER      fail if the source score exceeds this threshold
+
+  Return codes:
+    0  Success
+    1  Some source files contain errors
+    2  Command line arguments are invalid
+    3  Excess of threshold
+HELP";
 
 struct Arguments
 {
     string[] files = [];
-    uint threshold = 40;
+    Nullable!uint threshold;
+    bool help = false;
 }
 
 struct ArgumentError
@@ -17,7 +30,8 @@ struct ArgumentError
     {
         unknown,
         wrongType,
-        missingValue
+        missingValue,
+        noInput
     }
 
     private Type type_;
@@ -57,8 +71,21 @@ struct ArgumentError
                 return "Argument "
                     ~ argument
                     ~ " is expected to have a value";
+            case Type.noInput:
+                return "At least one source file should be specified";
         }
     }
+}
+
+SumType!(ArgumentError, Arguments) postprocessArguments(Arguments arguments, string[] rest)
+{
+    arguments.files = (arguments.files ~ rest).sort.uniq.array;
+    if (arguments.files.empty)
+    {
+        return typeof(return)(ArgumentError(ArgumentError.Type.noInput, null));
+    }
+
+    return typeof(return)(arguments);
 }
 
 SumType!(ArgumentError, Arguments) parseArguments(string[] args)
@@ -74,6 +101,11 @@ SumType!(ArgumentError, Arguments) parseArguments(string[] args)
             args.popFront;
             break;
         }
+        else if (args.front == "--help")
+        {
+            arguments.help = true;
+            return ArgumentResult(arguments);
+        }
         else if (args.front.startsWith("--") && args.length == 1)
         {
             return ArgumentResult(ArgumentError(ArgumentError.Type.unknown, args.front));
@@ -83,7 +115,7 @@ SumType!(ArgumentError, Arguments) parseArguments(string[] args)
             args.popFront;
             try
             {
-                arguments.threshold = args.front.to!uint;
+                arguments.threshold = nullable(args.front.to!uint);
             }
             catch (ConvException e)
             {
@@ -103,7 +135,5 @@ SumType!(ArgumentError, Arguments) parseArguments(string[] args)
         }
         args.popFront;
     }
-    arguments.files = (arguments.files ~ args).sort.uniq.array;
-
-    return ArgumentResult(arguments);
+    return postprocessArguments(arguments, args);
 }

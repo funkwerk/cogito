@@ -75,13 +75,20 @@ struct Meter
 
         sink(indentBytes);
         sink(this.name.toString());
-        sink(":\n");
-        sink(nextIndentBytes);
-        sink("Location (line): ");
-        sink(to!string(this.location.linnum));
-        sink("\n");
-        sink(nextIndentBytes);
-        sink("Score: ");
+        debug
+        {
+            sink(":\n");
+            sink(nextIndentBytes);
+            sink("Location (line): ");
+            sink(to!string(this.location.linnum));
+            sink("\n");
+            sink(nextIndentBytes);
+            sink("Score: ");
+        }
+        else
+        {
+            sink(": ");
+        }
         sink(to!string(this.score));
         sink("\n");
 
@@ -109,18 +116,29 @@ struct Source
     mixin Ruler!();
 }
 
-void printMeter(Source source)
+/**
+ * Returns: true if the score exceeds the threshold, otherwise returns false.
+ */
+bool printMeter(Source source, Nullable!uint threshold)
 {
-    writefln("\x1b[36m%s:\x1b[0m", source.filename);
+    const sourceScore = source.score;
 
-    if (!source.inner.empty)
+    if (!threshold.isNull && sourceScore > threshold.get)
     {
-        foreach (m; source.inner[])
+        writefln("\x1b[36m%s:\x1b[0m", source.filename);
+
+        if (!source.inner.empty)
         {
-            m.toString(input => write(input));
+            foreach (m; source.inner[])
+            {
+                m.toString(input => write(input));
+            }
         }
+        writefln("  \x1b[36mScore: %s\x1b[0m", sourceScore);
+
+        return true;
     }
-    writefln("  \x1b[36mScore: %s\x1b[0m", source.score);
+    return false;
 }
 
 void printErrors(List!CognitiveError errors)

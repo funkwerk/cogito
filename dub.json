@@ -20,6 +20,11 @@
 	"targetPath": "build",
 	"configurations": [
 		{
+			"name": "executable",
+			"targetType": "executable",
+			"mainSourceFile": "src/main.d"
+		},
+		{
 			"name": "unittest",
 			"targetType": "executable",
 			"targetName": "test",
