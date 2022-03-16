@@ -60,7 +60,7 @@ when 'release'
   build 'release'
 when 'run'
   build
-  system BINARY, 'sample/sample.d'
+  system BINARY, 'sample/sample.d', 'sample/sample1.d'
 when 'test'
   test
 when 'ts'

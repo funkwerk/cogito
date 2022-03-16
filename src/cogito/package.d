@@ -9,7 +9,10 @@ public import cogito.list;
 public import cogito.meter;
 public import cogito.visitor;
 
-Result runOnFiles(string[] args)
+import std.algorithm;
+import std.range;
+
+Result runOnFile(string file)
 {
     initialize();
     LocalHandler localHandler;
@@ -20,7 +23,7 @@ Result runOnFiles(string[] args)
         diagnosticHandler = null;
         deinitialize();
     }
-    auto tree = parseModule!AST(args[0]);
+    auto tree = parseModule!AST(file);
 
     if (tree.diagnostics.hasErrors())
     {
@@ -31,6 +34,12 @@ Result runOnFiles(string[] args)
     tree.module_.accept(visitor);
 
     return typeof(return)(visitor.source);
+}
+
+auto runOnFiles(R)(R args)
+if (isInputRange!R && is(ElementType!R == string))
+{
+    return args.map!runOnFile();
 }
 
 Result runOnCode(string code)

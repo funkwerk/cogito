@@ -1,15 +1,13 @@
 import cogito;
 
-import std.range;
+import cogito.arguments;
+import std.algorithm;
 import std.sumtype;
+import std.stdio;
 
-int main(string[] args)
+int accumulateResult(int accumulator, Result result)
 {
-    args.popFront;
-
-    auto meter = runOnFiles(args);
-
-    return match!(
+    return accumulator + match!(
         (List!CognitiveError errors) {
             printErrors(errors);
             return 1;
@@ -18,5 +16,21 @@ int main(string[] args)
             printMeter(source);
             return 0;
         }
-    )(meter);
+    )(result);
+}
+
+int main(string[] args)
+{
+    return parseArguments(args).match!(
+        (ArgumentError error) {
+            writeln(error);
+
+            return 2;
+        },
+        (Arguments arguments) {
+            auto meter = runOnFiles(arguments.files);
+
+            return meter.fold!accumulateResult(0) > 0 ? 1 : 0;
+        }
+    );
 }
