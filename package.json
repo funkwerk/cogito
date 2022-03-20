@@ -2,8 +2,7 @@
   "name": "cogito",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "ssh://git@ka-sl-git:7999/~ewissner/cogito.git",
-  "author": "Eugen Wissner <Eugen.Wissner@funkwerk.com>",
+  "author": "Eugen Wissner <eugen.wissner@funkwerk.com>",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {

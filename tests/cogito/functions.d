@@ -199,3 +199,41 @@ shared static ~this()
 
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
+
+@("Function literal")
+unittest
+{
+    auto meter = runOnCode(q{
+int[] f() {
+  return [1, 2].map(i => i % 2 ? i : i);
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 2);
+}
+
+@("Function literal template parameter")
+unittest
+{
+    auto meter = runOnCode(q{
+int[] f() {
+  return [1, 2].map!(i => i % 2 ? i : i);
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 2);
+}
+
+@("Nested function")
+unittest
+{
+    auto meter = runOnCode(q{
+void f() {
+    int g(int i) {
+        return i % 2 ? i : i;
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 2);
+}

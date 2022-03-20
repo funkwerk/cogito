@@ -16,13 +16,29 @@ static if (true)
     assert(meter.tryMatch!((Source source) => source.score) == 1);
 }
 
-@("Top-level static foreach")
+@("static foreach declaration")
 unittest
 {
     auto meter = runOnCode(q{
 static foreach (const a; 0..1)
 {
     alias Integer = int;
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
+
+@("Static foreach statement")
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    static foreach (const a; 0..1)
+    {
+        alias Integer = int;
+    }
 }
     });
 
@@ -136,4 +152,37 @@ void f()
     });
 
     assert(meter.tryMatch!((Source source) => source.score) == 6);
+}
+
+@("debug")
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    debug
+    {
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
+
+@("debug-else")
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    debug
+    {
+    }
+    else
+    {
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 2);
 }

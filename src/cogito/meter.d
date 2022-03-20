@@ -30,15 +30,28 @@ private mixin template Ruler()
     }
 }
 
+/**
+ * Identifier and its location in the source file.
+ */
 struct ScoreScope
 {
+    /**
+     * Declaration identifier (e.g. function or struct name, may be empty if
+     * this is a lambda).
+     */
     Identifier name;
+
+    /// Source position.
     Loc location;
 }
 
+/**
+ * Collects the score from a single declaration, like a function. Can contain
+ * nested $(D_SYMBOL Meter) structures with nested declarations.
+ */
 struct Meter
 {
-    ScoreScope scoreScope;
+    private ScoreScope scoreScope;
 
     @property ref Identifier name() return
     {
@@ -60,6 +73,12 @@ struct Meter
         this.scoreScope.location = location;
     }
 
+    /**
+     * Params:
+     *     name = Identifier.
+     *     location = Identifier location.
+     *     score = Initial score.
+     */
     public this(Identifier name, Loc location, uint score = 0)
     {
         this.name = name;
@@ -67,14 +86,15 @@ struct Meter
         this.ownScore = score;
     }
 
-    private void toString(void delegate(const(char)[]) sink, uint indentation)
+    private void toString(void delegate(const(char)[]) sink, const uint indentation)
     {
         const indentBytes = ' '.repeat(indentation * 2).array;
         const nextIndentation = indentation + 1;
         const nextIndentBytes = ' '.repeat(nextIndentation * 2).array;
+        const identifierName = this.name.toString();
 
         sink(indentBytes);
-        sink(this.name.toString());
+        sink(identifierName.empty ? "(λ)" : identifierName);
         debug
         {
             sink(":\n");
@@ -95,6 +115,13 @@ struct Meter
         this.inner[].each!(meter => meter.toString(sink, nextIndentation));
     }
 
+    /**
+     * Prints the information about the given identifier. Debug build provides
+     * more details.
+     *
+     * Params:
+     *     sink = Function used to print the information.
+     */
     void toString(void delegate(const(char)[]) sink)
     {
         toString(sink, 1);
@@ -103,6 +130,9 @@ struct Meter
     mixin Ruler!();
 }
 
+/**
+ * Collects the score from a single D module.
+ */
 struct Source
 {
     string filename;
@@ -122,8 +152,17 @@ struct Source
 bool printMeter(Source source, Nullable!uint threshold)
 {
     const sourceScore = source.score;
+    debug
+    {
+        enum bool isDebug = true;
+    }
+    else
+    {
+        enum bool isDebug = false;
+    }
+    const bool aboveThreshold = !threshold.isNull && sourceScore > threshold.get;
 
-    if (!threshold.isNull && sourceScore > threshold.get)
+    if (aboveThreshold || isDebug)
     {
         writefln("\x1b[36m%s:\x1b[0m", source.filename);
 
@@ -135,10 +174,8 @@ bool printMeter(Source source, Nullable!uint threshold)
             }
         }
         writefln("  \x1b[36mScore: %s\x1b[0m", sourceScore);
-
-        return true;
     }
-    return false;
+    return aboveThreshold;
 }
 
 void printErrors(List!CognitiveError errors)

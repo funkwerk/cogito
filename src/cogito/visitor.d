@@ -50,7 +50,9 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         if (this.meter.empty)
         {
             this.source.ownScore += by;
-        } else {
+        }
+        else
+        {
             this.meter.back.ownScore += by;
         }
     }
@@ -107,7 +109,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     override void visit(AST.DebugStatement statement)
     {
         debug writeln("Debug statement ", statement);
-
+        // Handled as ConditionalStatement or Condition
         super.visit(statement);
     }
 
@@ -153,6 +155,20 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         super.visit(expression);
     }
 
+    override void visit(AST.DelegatePtrExp expression)
+    {
+        debug writeln("Delegate pointer expression ", expression);
+
+        super.visit(expression);
+    }
+
+    override void visit(AST.DelegateFuncptrExp expression)
+    {
+        debug writeln("Delegate function pointer expression ", expression);
+
+        super.visit(expression);
+    }
+
     override void visit(AST.DotTypeExp expression)
     {
         debug writeln("Dot type expression ", expression);
@@ -184,20 +200,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     override void visit(AST.ArrayLengthExp expression)
     {
         debug writeln("Array length expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.DelegatePtrExp expression)
-    {
-        debug writeln("Delegate pointer expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.DelegateFuncptrExp expression)
-    {
-        debug writeln("Delegate function pointer expression ", expression);
 
         super.visit(expression);
     }
@@ -281,7 +283,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     override void visit(AST.UnionDeclaration statement)
     {
-        debug writeln(statement.stringof, ' ', statement);
+        debug writeln("Union ", statement);
 
         // Interfaces are handled as StructDeclarations
         super.visit(statement);
@@ -304,50 +306,16 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     override void visit(AST.StaticForeachStatement statement)
     {
-        debug writeln(statement.stringof, ' ', statement);
+        debug writeln("Static foreach statement ", statement);
 
-        super.visit(statement);
-    }
-
-    override void visit(AST.GotoDefaultStatement statement)
-    {
-        debug writeln(statement.stringof, ' ', statement);
-
-        super.visit(statement);
+        stepInStaticDeclaration(statement);
     }
 
     override void visit(AST.GotoStatement statement)
-    {
-        debug writeln(statement.stringof, ' ', statement);
+    { // There are also GotoDefaultStatement and GotoCaseStatement
+        debug writeln("Goto statement ", statement);
 
-        super.visit(statement);
-    }
-
-    override void visit(AST.AsmStatement statement)
-    {
-        debug writeln(statement.stringof, ' ', statement);
-
-        super.visit(statement);
-    }
-
-    override void visit(AST.CompoundAsmStatement statement)
-    {
-        debug writeln("Compound asm statement ", statement);
-
-        super.visit(statement);
-    }
-
-    override void visit(AST.InlineAsmStatement statement)
-    {
-        debug writeln("Inline asm statement ", statement);
-
-        super.visit(statement);
-    }
-
-    override void visit(AST.GccAsmStatement statement)
-    {
-        debug writeln("GCC asm statement ", statement);
-
+        increase;
         super.visit(statement);
     }
 
@@ -377,6 +345,13 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         newMeter.inner = this.meter;
         currentMeter.insert(newMeter);
         this.meter = currentMeter;
+    }
+
+    override void visit(AST.FuncLiteralDeclaration declaration)
+    {
+        debug writeln("Function literal ", declaration);
+
+        stepInFunction(declaration);
     }
 
     override void visit(AST.FuncDeclaration declaration)

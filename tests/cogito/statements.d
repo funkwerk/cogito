@@ -293,3 +293,17 @@ void f()
 
     assert(meter.tryMatch!((Source source) => source.score) == 8);
 }
+
+@("goto")
+unittest
+{
+    auto meter = runOnCode(q{
+void f()
+{
+    goto end;
+end:
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
