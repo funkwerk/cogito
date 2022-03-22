@@ -135,8 +135,14 @@ struct Meter
  */
 struct Source
 {
+    /// Module name.
     string filename;
 
+    /**
+     * Params:
+     *     inner = List with module metrics.
+     *     filename = Module name.
+     */
     public this(List!Meter inner, string filename = "main")
     {
         this.inner = inner;
@@ -147,6 +153,12 @@ struct Source
 }
 
 /**
+ * Prints source file metrics to the standard output.
+ *
+ * Params:
+ *     source = Collected metrics and scores.
+ *     threshold = Maximum acceptable score.
+ *
  * Returns: true if the score exceeds the threshold, otherwise returns false.
  */
 bool printMeter(Source source, Nullable!uint threshold)
@@ -178,6 +190,12 @@ bool printMeter(Source source, Nullable!uint threshold)
     return aboveThreshold;
 }
 
+/**
+ * Prints an error list to the standard output.
+ *
+ * Params:
+ *     errors = The errors to print.
+ */
 void printErrors(List!CognitiveError errors)
 {
     foreach (error; errors[])
@@ -239,6 +257,9 @@ struct LocalHandler
     }
 }
 
+/**
+ * Initialize global variables.
+ */
 void initialize()
 {
     initDMD(null, [],
@@ -253,6 +274,9 @@ void initialize()
     );
 }
 
+/**
+ * Clean up global variables.
+ */
 void deinitialize()
 {
     deinitializeDMD();

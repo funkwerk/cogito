@@ -20,6 +20,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     private uint depth = 0U;
     private Source source_;
     private List!TOK stack;
+    private Meter* parent;
 
     extern(D) this()
     {
@@ -31,7 +32,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
      */
     @property ref List!Meter meter()
     {
-        return this.source_.inner;
+        return this.parent is null ? this.source_.inner : this.parent.inner;
     }
 
     /**
@@ -47,13 +48,13 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
      */
     private void increase(uint by = 1U)
     {
-        if (this.meter.empty)
+        if (this.parent !is null)
         {
-            this.source.ownScore += by;
+            this.parent.ownScore += by;
         }
         else
         {
-            this.meter.back.ownScore += by;
+            this.source.ownScore += by;
         }
     }
 
@@ -335,16 +336,14 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     private void stepInAggregate(Declaration : AST.AggregateDeclaration)(Declaration declaration)
     {
-        auto currentMeter = this.meter;
+        auto newMeter = Meter(declaration.ident, declaration.loc);
+        auto parent = this.parent;
+        this.parent = &newMeter;
 
-        this.meter.clear();
         super.visit(declaration);
 
-        auto newMeter = Meter(declaration.ident, declaration.loc);
-
-        newMeter.inner = this.meter;
-        currentMeter.insert(newMeter);
-        this.meter = currentMeter;
+        this.parent = parent;
+        this.meter.insert(newMeter);
     }
 
     override void visit(AST.FuncLiteralDeclaration declaration)
@@ -370,11 +369,16 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     private void stepInFunction(T : AST.FuncDeclaration)(T declaration)
     {
-        this.meter.insert(Meter(declaration.ident, declaration.loc));
+        auto newMeter = Meter(declaration.ident, declaration.loc);
+        auto parent = this.parent;
+        this.parent = &newMeter;
 
         ++this.depth;
         super.visit(declaration);
         --this.depth;
+
+        this.parent = parent;
+        this.meter.insert(newMeter);
     }
 
     override void visit(AST.Statement s)

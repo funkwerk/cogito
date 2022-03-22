@@ -11,12 +11,12 @@ struct Range(T)
         this.entry = entry;
     }
 
-    public bool empty()
+    public bool empty() const
     {
         return this.entry is null;
     }
 
-    public ref T front()
+    public ref inout(T) front() inout
     in(this.entry !is null)
     {
         return this.entry.element;
@@ -35,6 +35,9 @@ private struct Entry(T)
     private Entry!T* next;
 }
 
+/**
+ * Queue that supports recursive data definitions.
+ */
 struct List(T)
 {
     private Entry!T* first;
@@ -72,24 +75,24 @@ struct List(T)
         }
     }
 
-    @property bool empty()
+    @property bool empty() const
     {
         return this.first is null;
     }
 
-    @property ref T front()
+    @property ref inout(T) front() inout
     in(!empty)
     {
         return this.first.element;
     }
 
-    @property ref T back()
+    @property ref inout(T) back() inout
     in(!empty)
     {
         return this.last.element;
     }
 
-    Range!T opSlice()
+    Range!T opIndex()
     {
         return Range!T(this.first);
     }
