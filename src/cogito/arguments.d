@@ -6,6 +6,7 @@ import std.conv;
 import std.sumtype;
 import std.typecons;
 
+/// Help message.
 enum string help = q"HELP
 Usage: cogito [OPTION…] SOURCE…
     --threshold NUMBER      fail if the source score exceeds this threshold
@@ -17,15 +18,25 @@ Usage: cogito [OPTION…] SOURCE…
     3  Excess of threshold
 HELP";
 
+/**
+ * Arguments supported by the CLI.
+ */
 struct Arguments
 {
+    /// Input files.
     string[] files = [];
+    /// Threshold.
     Nullable!uint threshold;
+    /// Display help message.
     bool help = false;
 }
 
+/**
+ * CLI argument parsing error.
+ */
 struct ArgumentError
 {
+    /// Error type.
     enum Type : int
     {
         unknown,
@@ -36,6 +47,7 @@ struct ArgumentError
 
     private Type type_;
     private string argument_;
+    /// Expected argument type.
     string expected;
 
     @disable this();

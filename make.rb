@@ -62,7 +62,11 @@ def build_frontend(version = 'debug')
 
   Dir.mkdir 'build' unless Dir.exist? 'build'
 
-  system('dmd', "-#{version}", '-lib', *arguments, exception: true)
+  system((BIN_PATH + 'dmd').to_s,
+    "-#{version}",
+    '-lib',
+    *arguments,
+    exception: true)
 end
 
 def build(version = 'debug')

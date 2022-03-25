@@ -1,0 +1,57 @@
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push: ~
+  pull_request:
+    branches: [master]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1
+
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: '~/.dub'
+        key: ${{ runner.os }}-test-${{ hashFiles('**/dub.json') }}
+        restore-keys: ${{ runner.os }}-test-
+
+    - name: Install dependencies
+      run: ruby make.rb install
+
+    - name: Build binary
+      run: ruby make.rb release
+
+    - name: Run tests
+      run: ruby make.rb test
+
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup DMD
+      uses: dlang-community/setup-dlang@v1
+      with:
+        compiler: dmd-2.098.1
+
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: '~/.dub'
+        key: ${{ runner.os }}-audit-${{ hashFiles('**/dub.json') }}
+        restore-keys: ${{ runner.os }}-audit-
+
+    - run: dub fetch dscanner --version=0.12.0
+    - run: dub run dscanner -- --styleCheck src tests
