@@ -1,5 +1,8 @@
 module cogito.list;
 
+/**
+ * List range.
+ */
 struct Range(T)
 {
     private Entry!T* entry;
@@ -11,17 +14,26 @@ struct Range(T)
         this.entry = entry;
     }
 
+    /**
+     * Returns: Whether the range is empty.
+     */
     public bool empty() const
     {
         return this.entry is null;
     }
 
+    /**
+     * Returns: The front element.
+     */
     public ref inout(T) front() inout
     in(this.entry !is null)
     {
         return this.entry.element;
     }
 
+    /**
+     * Removes the front element of the range.
+     */
     public void popFront()
     in(this.entry !is null)
     {
@@ -46,6 +58,12 @@ struct List(T)
     invariant((this.first is null && this.last is null)
         || (this.first !is null && this.last !is null));
 
+    /**
+     * Appends $(D_PARAM element) to the list.
+     *
+     * Params:
+     *     element = The element to append.
+     */
     void insert(T element)
     {
         auto entry = new Entry!T(element, null);
@@ -65,6 +83,9 @@ struct List(T)
         }
     }
 
+    /**
+     * Remove the first element.
+     */
     void removeFront()
     in(!empty)
     {
@@ -75,28 +96,43 @@ struct List(T)
         }
     }
 
+    /**
+     * Returns: Whether this list is empty.
+     */
     @property bool empty() const
     {
         return this.first is null;
     }
 
+    /**
+     * Returns: Head element.
+     */
     @property ref inout(T) front() inout
     in(!empty)
     {
         return this.first.element;
     }
 
+    /**
+     * Returns: Last element.
+     */
     @property ref inout(T) back() inout
     in(!empty)
     {
         return this.last.element;
     }
 
+    /**
+     * Returns: Range over this list.
+     */
     Range!T opIndex()
     {
         return Range!T(this.first);
     }
 
+    /**
+     * Remove all elements.
+     */
     void clear()
     {
         while (!empty)

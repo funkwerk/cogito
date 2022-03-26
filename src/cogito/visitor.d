@@ -336,7 +336,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     private void stepInAggregate(Declaration : AST.AggregateDeclaration)(Declaration declaration)
     {
-        auto newMeter = Meter(declaration.ident, declaration.loc);
+        auto newMeter = Meter(declaration.ident, declaration.loc, Meter.Type.aggregate);
         auto parent = this.parent;
         this.parent = &newMeter;
 
@@ -369,7 +369,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     private void stepInFunction(T : AST.FuncDeclaration)(T declaration)
     {
-        auto newMeter = Meter(declaration.ident, declaration.loc);
+        auto newMeter = Meter(declaration.ident, declaration.loc, Meter.Type.callable);
         auto parent = this.parent;
         this.parent = &newMeter;
 
@@ -623,7 +623,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     {
         debug writeln("Module declaration ", moduleDeclaration);
 
-        this.source_.filename = moduleDeclaration.ident.toString.idup;
+        this.source_.filename = moduleDeclaration.md.toString.idup;
 
         super.visit(moduleDeclaration);
     }

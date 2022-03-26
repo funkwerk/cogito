@@ -1,15 +1,20 @@
 [![CI](https://github.com/funkwerk/cogito/workflows/CI/badge.svg)](https://github.com/funkwerk/cogito/actions?query=workflow%3ACI)
 [![License](https://img.shields.io/badge/license-MPL_2.0-blue.svg)](https://raw.githubusercontent.com/funkwerk/mocked/master/LICENSE)
 
-# Installing and usage
+# cōgitō
 
-Extract dmd.2.098.1.linux.tar.xz into tools, so you have the tools/dmd2
-directory.
+cōgitō analyses D code and calculates its cognitive complexity.
 
-Run `./make.rb release`.
+## Installing and usage
+
+Run `./make.rb install release`.
+
+It will download and install the frontend and build a binary. Then you can run
+it on some D source:
+
 Run `./build/cogito sample/sample.d`.
 
-# Example output
+## Example output
 
 ```
 sample/sample.d:

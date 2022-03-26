@@ -53,22 +53,34 @@ struct Meter
 {
     private ScoreScope scoreScope;
 
+    /// Symbol type.
+    enum Type
+    {
+        aggregate, /// Aggregate.
+        callable /// Function.
+    }
+    private Type type;
+
+    /// Gets the evaluated identifier.
     @property ref Identifier name() return
     {
         return this.scoreScope.name;
     }
 
+    /// Sets the evaluated identifier.
     @property void name(ref Identifier name)
     {
         this.scoreScope.name = name;
     }
 
+    /// Gets identifier location.
     @property ref Loc location() return
     {
         return this.scoreScope.location;
     }
 
-    @property void name(ref Loc location)
+    /// Sets identifier location.
+    @property void location(ref Loc location)
     {
         this.scoreScope.location = location;
     }
@@ -77,13 +89,13 @@ struct Meter
      * Params:
      *     name = Identifier.
      *     location = Identifier location.
-     *     score = Initial score.
+     *     type = Symbol type.
      */
-    public this(Identifier name, Loc location, uint score = 0)
+    public this(Identifier name, Loc location, Type type)
     {
         this.name = name;
         this.location = location;
-        this.ownScore = score;
+        this.type = type;
     }
 
     private void toString(void delegate(const(char)[]) sink, const uint indentation)
@@ -99,8 +111,10 @@ struct Meter
         {
             sink(":\n");
             sink(nextIndentBytes);
-            sink("Location (line): ");
+            sink("Location: ");
             sink(to!string(this.location.linnum));
+            sink(":");
+            sink(to!string(this.location.charnum));
             sink("\n");
             sink(nextIndentBytes);
             sink("Score: ");
@@ -137,6 +151,9 @@ struct Source
 {
     /// Module name.
     string filename;
+
+    /// Identifiers representing packages.
+    Identifier[] packages = [];
 
     /**
      * Params:
@@ -282,4 +299,5 @@ void deinitialize()
     deinitializeDMD();
 }
 
+/// Result of analysing a source file.
 alias Result = SumType!(List!CognitiveError, Source);
