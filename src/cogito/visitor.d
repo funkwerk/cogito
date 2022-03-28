@@ -623,7 +623,9 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     {
         debug writeln("Module declaration ", moduleDeclaration);
 
-        this.source_.filename = moduleDeclaration.md.toString.idup;
+        this.source_.filename = moduleDeclaration.md is null
+            ? "app"
+            : moduleDeclaration.md.toString.idup;
 
         super.visit(moduleDeclaration);
     }

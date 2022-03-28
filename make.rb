@@ -5,7 +5,8 @@ require 'pathname'
 require 'fileutils'
 require 'net/http'
 
-BIN_PATH = Pathname.new 'tools/dmd2/linux/bin64'
+DC = Pathname.new(ENV.fetch 'DC', 'tools/dmd2/linux/bin64/dmd').expand_path
+BIN_PATH = DC.dirname
 
 def make_arguments(name, arguments)
   arguments.map do |argument|
@@ -62,10 +63,17 @@ def build_frontend(version = 'debug')
 
   Dir.mkdir 'build' unless Dir.exist? 'build'
 
-  system((BIN_PATH + 'dmd').to_s,
+  system(DC.to_s,
     "-#{version}",
     '-lib',
     *arguments,
+    exception: true)
+end
+
+def dub(command, arguments = [])
+  system({ 'DC' => DC.to_s },
+    (BIN_PATH + 'dub').to_s,
+    command, *arguments,
     exception: true)
 end
 
@@ -73,25 +81,20 @@ def build(version = 'debug')
   build_frontend unless File.exist? 'build/dmd.a'
   config = version == 'unittest' ? 'unittest' : 'executable'
 
-  system((BIN_PATH + 'dub').to_s,
-    'build', "--build=#{version}",
-    "--config=#{config}",
-    exception: true)
+  dub 'build', ["--build=#{version}", "--config=#{config}"]
 end
 
 def clean
   FileUtils.rm_f Dir.glob('build/*')
-
-  system((BIN_PATH + 'dub').to_s, 'clean', exception: true)
+  dub 'clean'
 end
 
 (ARGV.empty? ? ['d'] : ARGV).each do |argument|
   case argument
-  when 'd'
+  when 'clean'
     clean
-    build
-  when 'release'
-    build 'release'
+  when 'release', 'debug'
+    build argument
   when 'run'
     build 'debug'
     system 'build/cogito', 'sample/sample.d'
@@ -100,10 +103,12 @@ end
     system 'build/test', '-s'
   when 'install'
     install_frontend
-  when 'ts'
-    system 'npx', 'cognitive-complexity-ts-json', 'sample/sample.ts'
   else
-    raise "Command „#{argument}“ doesn't exist"
+    puts <<~CMD
+      Command „#{argument}“ doesn't exist.
+      Available commands are: clean, release, debug, unittest, install.
+    CMD
+    exit 1
   end
 end
 
