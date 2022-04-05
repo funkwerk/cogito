@@ -8,6 +8,7 @@ import dmd.globals;
 import dmd.console;
 import dmd.root.outbuffer;
 
+import cogito.arguments;
 import cogito.list;
 import std.algorithm;
 import std.conv;
@@ -98,50 +99,95 @@ struct Meter
         this.type = type;
     }
 
-    private void toString(void delegate(const(char)[]) sink, const uint indentation)
+    /**
+     * Returns: $(D_KEYWORD true) if any function inside the current node
+     *          excceds the threshold, otherwise $(D_KEYWORD false).
+     */
+    bool isAbove(Nullable!uint threshold)
     {
-        const indentBytes = ' '.repeat(indentation * 2).array;
-        const nextIndentation = indentation + 1;
-        const nextIndentBytes = ' '.repeat(nextIndentation * 2).array;
-        const identifierName = this.name.toString();
-
-        sink(indentBytes);
-        sink(identifierName.empty ? "(λ)" : identifierName);
-        debug
+        if (threshold.isNull)
         {
-            sink(":\n");
-            sink(nextIndentBytes);
-            sink("Location: ");
-            sink(to!string(this.location.linnum));
-            sink(":");
-            sink(to!string(this.location.charnum));
-            sink("\n");
-            sink(nextIndentBytes);
-            sink("Score: ");
+            return false;
+        }
+        if (this.type == Type.callable)
+        {
+            return this.score > threshold.get;
         }
         else
         {
-            sink(": ");
+            return reduce!((accum, x) => accum || x.isAbove(threshold))(false, this.inner[]);
         }
-        sink(to!string(this.score));
-        sink("\n");
-
-        this.inner[].each!(meter => meter.toString(sink, nextIndentation));
-    }
-
-    /**
-     * Prints the information about the given identifier. Debug build provides
-     * more details.
-     *
-     * Params:
-     *     sink = Function used to print the information.
-     */
-    void toString(void delegate(const(char)[]) sink)
-    {
-        toString(sink, 1);
     }
 
     mixin Ruler!();
+}
+
+/**
+ * Prints the information about the given identifier.
+ *
+ * Params:
+ *     sink = Function used to print the information.
+ *     indentation = Indentation.
+ */
+void verbose(ref Meter meter, void delegate(const(char)[]) sink,
+        const uint indentation = 1)
+{
+    const indentBytes = ' '.repeat(indentation * 2).array;
+    const nextIndentation = indentation + 1;
+    const nextIndentBytes = ' '.repeat(nextIndentation * 2).array;
+    const identifierName = meter.name.toString();
+
+    sink(indentBytes);
+    sink(identifierName.empty ? "(λ)" : identifierName);
+
+    sink(":\n");
+    sink(nextIndentBytes);
+    sink("Location: ");
+    sink(to!string(meter.location.linnum));
+    sink(":");
+    sink(to!string(meter.location.charnum));
+    sink("\n");
+    sink(nextIndentBytes);
+    sink("Score: ");
+
+    sink(meter.score.to!string);
+    sink("\n");
+
+    meter.inner[].each!(meter => verbose(meter, sink, nextIndentation));
+}
+
+/**
+ * Prints the information about the given identifier.
+ *
+ * Params:
+ *     sink = Function used to print the information.
+ *     path = Identifier path.
+ *     always = Produce output not looking at threshold.
+ *     threshold = Function score limit.
+ */
+void flat(ref Meter meter, void delegate(const(char)[]) sink,
+        bool always, Nullable!uint threshold,
+        const string[] path = [])
+{
+    if (!always && !meter.isAbove(threshold))
+    {
+        return;
+    }
+    const identifierName = meter.name.toString();
+    const anonymousName = identifierName.empty? "(λ)" : identifierName;
+    const nameParts = path ~ [anonymousName.idup];
+
+    if (meter.type == Meter.Type.callable)
+    {
+        sink("  ");
+        sink(nameParts.join("."));
+        sink(": ");
+        sink(meter.score.to!string);
+        sink("\n");
+    }
+
+    meter.inner[].each!(meter => flat(meter, sink,
+                always, threshold, nameParts));
 }
 
 /**
@@ -166,6 +212,19 @@ struct Source
         this.filename = filename;
     }
 
+    /**
+     * Returns: $(D_KEYWORD true) if any function inside the current node
+     *          excceds the threshold, otherwise $(D_KEYWORD false).
+     */
+    bool isAbove(Nullable!uint threshold)
+    {
+        if (threshold.isNull)
+        {
+            return false;
+        }
+        return reduce!((accum, x) => accum || x.isAbove(threshold))(false, this.inner[]);
+    }
+
     mixin Ruler!();
 }
 
@@ -174,36 +233,43 @@ struct Source
  *
  * Params:
  *     source = Collected metrics and scores.
- *     threshold = Maximum acceptable score.
+ *     threshold = Maximum acceptable function score.
+ *     moduleThreshold = Maximum acceptable module score.
+ *     format = Output format.
  *
- * Returns: true if the score exceeds the threshold, otherwise returns false.
+ * Returns: $(D_KEYWORD true) if the score exceeds the threshold, otherwise
+ *          returns $(D_KEYWORD false).
  */
-bool printMeter(Source source, Nullable!uint threshold)
+bool printMeter(Source source, Nullable!uint threshold,
+        Nullable!uint moduleThreshold, Nullable!OutputFormat format)
 {
     const sourceScore = source.score;
-    debug
-    {
-        enum bool isDebug = true;
-    }
-    else
-    {
-        enum bool isDebug = false;
-    }
-    const bool aboveThreshold = !threshold.isNull && sourceScore > threshold.get;
+    const bool aboveModuleThreshold = !moduleThreshold.isNull
+        && sourceScore > moduleThreshold.get;
+    const bool aboveThreshold = aboveModuleThreshold || source.isAbove(threshold);
 
-    if (aboveThreshold || isDebug)
+    if ((aboveThreshold || format == nullable(OutputFormat.verbose))
+            && format != nullable(OutputFormat.silent))
     {
-        writefln("\x1b[36m%s:\x1b[0m", source.filename);
+        writefln("\x1b[36m%s: %s\x1b[0m", source.filename, sourceScore);
 
-        if (!source.inner.empty)
+        foreach (m; source.inner[])
         {
-            foreach (m; source.inner[])
+            if (format == nullable(OutputFormat.verbose))
             {
-                m.toString(input => write(input));
+                verbose(m, input => write(input));
+            }
+            else if (aboveModuleThreshold || format == nullable(OutputFormat.flat))
+            {
+                flat(m, input => write(input), true, threshold);
+            }
+            else
+            {
+                flat(m, input => write(input), false, threshold);
             }
         }
-        writefln("  \x1b[36mScore: %s\x1b[0m", sourceScore);
     }
+
     return aboveThreshold;
 }
 

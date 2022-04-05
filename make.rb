@@ -89,7 +89,7 @@ def clean
   dub 'clean'
 end
 
-(ARGV.empty? ? ['d'] : ARGV).each do |argument|
+(ARGV.empty? ? ['run'] : ARGV).each do |argument|
   case argument
   when 'clean'
     clean
@@ -97,7 +97,7 @@ end
     build argument
   when 'run'
     build 'debug'
-    system 'build/cogito', 'sample/sample.d'
+    system 'build/cogito', 'tools/sample.d'
   when 'test'
     build 'unittest'
     system 'build/test', '-s'

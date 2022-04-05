@@ -9,7 +9,9 @@ import std.typecons;
 /// Help message.
 enum string help = q"HELP
 Usage: cogito [OPTION…] SOURCE…
-    --threshold NUMBER      fail if the source score exceeds this threshold
+    --module-threshold NUMBER      fail if the source score exceeds this threshold
+    --threshold NUMBER             fail if a function score exceeds this threshold
+    --format ENUMERATION           "silent", "flat" or "verbose"
 
   Return codes:
     0  Success
@@ -19,14 +21,28 @@ Usage: cogito [OPTION…] SOURCE…
 HELP";
 
 /**
+ * Possible output formats.
+ */
+enum OutputFormat
+{
+    silent,
+    flat,
+    verbose
+}
+
+/**
  * Arguments supported by the CLI.
  */
 struct Arguments
 {
     /// Input files.
     string[] files = [];
-    /// Threshold.
+    /// Module threshold.
+    Nullable!uint moduleThreshold;
+    /// Function threshold.
     Nullable!uint threshold;
+    /// Output format.
+    Nullable!OutputFormat format;
     /// Display help message.
     bool help = false;
 }
@@ -122,17 +138,48 @@ SumType!(ArgumentError, Arguments) parseArguments(string[] args)
         {
             return ArgumentResult(ArgumentError(ArgumentError.Type.unknown, args.front));
         }
-        else if (args.front == "--threshold")
+        else if (args.front == "--module-threshold" || args.front == "--threshold")
         {
+            const next = args.front;
             args.popFront;
             try
             {
-                arguments.threshold = nullable(args.front.to!uint);
+                if (next == "--module-threshold") 
+                {
+                    arguments.moduleThreshold = nullable(args.front.to!uint);
+                }
+                else
+                {
+                    arguments.threshold = nullable(args.front.to!uint);
+                }
             }
             catch (ConvException e)
             {
                 auto error = ArgumentError(ArgumentError.Type.wrongType, args.front);
                 error.expected = "Positive number";
+
+                return ArgumentResult(error);
+            }
+        }
+        else if (args.front == "--format")
+        {
+            args.popFront;
+            if (args.front == "flat") 
+            {
+                arguments.format = nullable(OutputFormat.flat);
+            }
+            else if (args.front == "silent")
+            {
+                arguments.format = nullable(OutputFormat.silent);
+            }
+            else if (args.front == "verbose")
+            {
+                arguments.format = nullable(OutputFormat.verbose);
+            }
+            else
+            {
+                auto error = ArgumentError(ArgumentError.Type.wrongType, args.front);
+                error.expected = "silent|flat|verbose";
 
                 return ArgumentResult(error);
             }

@@ -13,7 +13,11 @@ int accumulateResult(Arguments arguments, int accumulator, Result result)
             printErrors(errors);
             return 1;
         },
-        (Source source) => printMeter(source, arguments.threshold) ? 3 : 0
+        (Source source) {
+            const result = printMeter(source, arguments.threshold,
+                    arguments.moduleThreshold, arguments.format);
+            return result ? 3 : 0;
+        }
     )(result);
     if (accumulator == 1 || nextResult == 1)
     {
