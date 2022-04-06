@@ -83,7 +83,7 @@ interface C
 }
     });
 
-    assert(meter.tryMatch!((Source source) => source.inner[].front.name.toString) == "C");
+    assert(meter.tryMatch!((Source source) => source.inner[].front.name) == "C");
 }
 
 @("Union")
@@ -95,7 +95,7 @@ union U
 }
     });
 
-    assert(meter.tryMatch!((Source source) => source.inner[].front.name.toString) == "U");
+    assert(meter.tryMatch!((Source source) => source.inner[].front.name) == "U");
 }
 
 @("Constructor")

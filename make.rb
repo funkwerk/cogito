@@ -97,7 +97,7 @@ end
     build argument
   when 'run'
     build 'debug'
-    system 'build/cogito', 'tools/sample.d'
+    system 'build/cogito', '--format', 'verbose', 'tools/sample.d'
   when 'test'
     build 'unittest'
     system 'build/test', '-s'

@@ -1,5 +1,6 @@
 module cogito.visitor;
 
+import core.stdc.string;
 import dmd.ast_node;
 import dmd.astcodegen;
 import dmd.parsetimevisitor;
@@ -495,10 +496,10 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         }
         foreach (elseDeclaration; *declaration)
         {
-            auto elseIf = cast(AST.StaticIfDeclaration) elseDeclaration;
-            if (elseIf !is null)
+            if (strcmp(elseDeclaration.kind, "static if") == 0)
             {
-                if (elseIf.decl)
+                auto elseIf = cast(AST.StaticIfDeclaration) elseDeclaration;
+                if (elseIf.decl !is null)
                 {
                     increase;
 
@@ -513,6 +514,8 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
             }
             else
             {
+                increase;
+
                 ++this.depth;
                 elseDeclaration.accept(this);
                 --this.depth;
