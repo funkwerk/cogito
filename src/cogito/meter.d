@@ -40,7 +40,7 @@ struct ScoreScope
      * Declaration identifier (e.g. function or struct name, may be empty if
      * this is a lambda).
      */
-    Identifier name;
+    Identifier identifier;
 
     /// Source position.
     Loc location;
@@ -63,15 +63,32 @@ struct Meter
     private Type type;
 
     /// Gets the evaluated identifier.
-    @property ref Identifier name() return
+    @property ref Identifier identifier() return
     {
-        return this.scoreScope.name;
+        return this.scoreScope.identifier;
     }
 
     /// Sets the evaluated identifier.
-    @property void name(ref Identifier name)
+    @property void identifier(ref Identifier identifier)
     {
-        this.scoreScope.name = name;
+        this.scoreScope.identifier = identifier;
+    }
+
+    @property const(char)[] name()
+    {
+        auto stringName = this.scoreScope.identifier.toString();
+
+        switch (stringName)
+        {
+            case "":
+                return "(λ)";
+            case "__ctor":
+                return "this";
+            case "__dtor":
+                return "~this";
+            default:
+                return stringName;
+        }
     }
 
     /// Gets identifier location.
@@ -88,13 +105,13 @@ struct Meter
 
     /**
      * Params:
-     *     name = Identifier.
+     *     identifier = Identifier.
      *     location = Identifier location.
      *     type = Symbol type.
      */
-    public this(Identifier name, Loc location, Type type)
+    public this(Identifier identifier, Loc location, Type type)
     {
-        this.name = name;
+        this.identifier = identifier;
         this.location = location;
         this.type = type;
     }
@@ -135,10 +152,9 @@ void verbose(ref Meter meter, void delegate(const(char)[]) sink,
     const indentBytes = ' '.repeat(indentation * 2).array;
     const nextIndentation = indentation + 1;
     const nextIndentBytes = ' '.repeat(nextIndentation * 2).array;
-    const identifierName = meter.name.toString();
 
     sink(indentBytes);
-    sink(identifierName.empty ? "(λ)" : identifierName);
+    sink(meter.name);
 
     sink(":\n");
     sink(nextIndentBytes);
@@ -173,9 +189,7 @@ void flat(ref Meter meter, void delegate(const(char)[]) sink,
     {
         return;
     }
-    const identifierName = meter.name.toString();
-    const anonymousName = identifierName.empty? "(λ)" : identifierName;
-    const nameParts = path ~ [anonymousName.idup];
+    const nameParts = path ~ [meter.name.idup];
 
     if (meter.type == Meter.Type.callable)
     {
