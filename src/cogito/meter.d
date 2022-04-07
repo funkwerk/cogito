@@ -16,6 +16,7 @@ import std.range;
 import std.stdio : write, writefln;
 import std.typecons;
 import std.sumtype;
+import std.traits;
 
 private mixin template Ruler()
 {
@@ -144,32 +145,60 @@ struct Meter
  *
  * Params:
  *     sink = Function used to print the information.
- *     indentation = Indentation.
  */
-void verbose(ref Meter meter, void delegate(const(char)[]) sink,
-        const uint indentation = 1)
+struct VerboseFormatter(alias sink)
+if (isCallable!sink)
 {
-    const indentBytes = ' '.repeat(indentation * 2).array;
-    const nextIndentation = indentation + 1;
-    const nextIndentBytes = ' '.repeat(nextIndentation * 2).array;
+    private Source source;
 
-    sink(indentBytes);
-    sink(meter.name);
+    @disable this();
 
-    sink(":\n");
-    sink(nextIndentBytes);
-    sink("Location: ");
-    sink(to!string(meter.location.linnum));
-    sink(":");
-    sink(to!string(meter.location.charnum));
-    sink("\n");
-    sink(nextIndentBytes);
-    sink("Score: ");
+    this(Source source)
+    {
+        this.source = source;
+    }
 
-    sink(meter.score.to!string);
-    sink("\n");
+    /**
+     * Params:
+     *     meter = The score statistics to print.
+     */
+    void format()
+    {
+        sink(this.source.filename);
+        sink(": ");
+        sink(this.source.score.to!string);
+        sink("\n");
 
-    meter.inner[].each!(meter => verbose(meter, sink, nextIndentation));
+        foreach (ref meter; this.source.inner[])
+        {
+            traverse(meter, 1);
+        }
+    }
+
+    private void traverse(ref Meter meter, const uint indentation)
+    {
+        const indentBytes = ' '.repeat(indentation * 2).array;
+        const nextIndentation = indentation + 1;
+        const nextIndentBytes = ' '.repeat(nextIndentation * 2).array;
+
+        sink(indentBytes);
+        sink(meter.name);
+
+        sink(":\n");
+        sink(nextIndentBytes);
+        sink("Location: ");
+        sink(to!string(meter.location.linnum));
+        sink(":");
+        sink(to!string(meter.location.charnum));
+        sink("\n");
+        sink(nextIndentBytes);
+        sink("Score: ");
+
+        sink(meter.score.to!string);
+        sink("\n");
+
+        meter.inner[].each!(meter => this.traverse(meter, nextIndentation));
+    }
 }
 
 /**
@@ -177,31 +206,60 @@ void verbose(ref Meter meter, void delegate(const(char)[]) sink,
  *
  * Params:
  *     sink = Function used to print the information.
- *     path = Identifier path.
- *     always = Produce output not looking at threshold.
- *     threshold = Function score limit.
  */
-void flat(ref Meter meter, void delegate(const(char)[]) sink,
-        bool always, Nullable!uint threshold,
-        const string[] path = [])
+struct FlatFormatter(alias sink)
+if (isCallable!sink)
 {
-    if (!always && !meter.isAbove(threshold))
-    {
-        return;
-    }
-    const nameParts = path ~ [meter.name.idup];
+    private Source source;
 
-    if (meter.type == Meter.Type.callable)
+    @disable this();
+
+    this(Source source)
     {
-        sink("  ");
-        sink(nameParts.join("."));
+        this.source = source;
+    }
+
+    /**
+     * Params:
+     *     meter = The score statistics to print.
+     *     always = Produce output not looking at threshold.
+     *     threshold = Function score limit.
+     */
+    void format(const bool always, Nullable!uint threshold)
+    {
+        sink(this.source.filename);
         sink(": ");
-        sink(meter.score.to!string);
+        sink(this.source.score.to!string);
         sink("\n");
+
+        foreach (ref meter; this.source.inner[])
+        {
+            traverse(meter, always, threshold, []);
+        }
     }
 
-    meter.inner[].each!(meter => flat(meter, sink,
-                always, threshold, nameParts));
+    private void traverse(ref Meter meter,
+            const bool always, Nullable!uint threshold,
+            const string[] path)
+    {
+        if (!always && !meter.isAbove(threshold))
+        {
+            return;
+        }
+        const nameParts = path ~ [meter.name.idup];
+
+        if (meter.type == Meter.Type.callable)
+        {
+            sink("  ");
+            sink(nameParts.join("."));
+            sink(": ");
+            sink(meter.score.to!string);
+            sink("\n");
+        }
+
+        meter.inner[].each!(meter => this.traverse(meter,
+                    always, threshold, nameParts));
+    }
 }
 
 /**
@@ -260,31 +318,31 @@ bool printMeter(Source source, Nullable!uint threshold,
     const sourceScore = source.score;
     const bool aboveModuleThreshold = !moduleThreshold.isNull
         && sourceScore > moduleThreshold.get;
-    const bool aboveThreshold = aboveModuleThreshold || source.isAbove(threshold);
-
-    if ((aboveThreshold || format == nullable(OutputFormat.verbose))
-            && format != nullable(OutputFormat.silent))
+    const bool aboveAnyThreshold = aboveModuleThreshold || source.isAbove(threshold);
+    if (format == nullable(OutputFormat.silent))
     {
-        writefln("\x1b[36m%s: %s\x1b[0m", source.filename, sourceScore);
+        return aboveAnyThreshold;
+    }
 
-        foreach (m; source.inner[])
+    if (aboveAnyThreshold
+            || format == nullable(OutputFormat.verbose
+            || (moduleThreshold.isNull && threshold.isNull)))
+    {
+        if (format == nullable(OutputFormat.verbose))
         {
-            if (format == nullable(OutputFormat.verbose))
-            {
-                verbose(m, input => write(input));
-            }
-            else if (aboveModuleThreshold || format == nullable(OutputFormat.flat))
-            {
-                flat(m, input => write(input), true, threshold);
-            }
-            else
-            {
-                flat(m, input => write(input), false, threshold);
-            }
+            VerboseFormatter!write(source).format();
+        }
+        else if (aboveModuleThreshold || format == nullable(OutputFormat.flat))
+        {
+            FlatFormatter!write(source).format(true, threshold);
+        }
+        else
+        {
+            FlatFormatter!write(source).format(false, threshold);
         }
     }
 
-    return aboveThreshold;
+    return aboveAnyThreshold;
 }
 
 /**
