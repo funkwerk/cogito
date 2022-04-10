@@ -28,6 +28,11 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         this.source_ = Source(List!Meter());
     }
 
+    extern(D) this(string filename)
+    {
+        this.source_ = Source(List!Meter(), filename);
+    }
+
     /**
      * Returns collected scores.
      */
@@ -626,7 +631,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     {
         debug writeln("Module declaration ", moduleDeclaration);
 
-        this.source_.filename = moduleDeclaration.md is null
+        this.source_.moduleName = moduleDeclaration.md is null
             ? "app"
             : moduleDeclaration.md.toString.idup;
 

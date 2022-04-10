@@ -14,7 +14,7 @@ int accumulateResult(Arguments arguments, int accumulator, Result result)
             return 1;
         },
         (Source source) {
-            const result = printMeter(source, arguments.threshold,
+            const result = report(source, arguments.threshold,
                     arguments.moduleThreshold, arguments.format);
             return result ? 3 : 0;
         }

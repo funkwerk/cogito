@@ -146,7 +146,7 @@ struct Meter
  * Params:
  *     sink = Function used to print the information.
  */
-struct VerboseFormatter(alias sink)
+struct VerboseReporter(alias sink)
 if (isCallable!sink)
 {
     private Source source;
@@ -162,9 +162,9 @@ if (isCallable!sink)
      * Params:
      *     meter = The score statistics to print.
      */
-    void format()
+    void report()
     {
-        sink(this.source.filename);
+        sink(this.source.moduleName);
         sink(": ");
         sink(this.source.score.to!string);
         sink("\n");
@@ -207,13 +207,17 @@ if (isCallable!sink)
  * Params:
  *     sink = Function used to print the information.
  */
-struct FlatFormatter(alias sink)
+struct FlatReporter(alias sink)
 if (isCallable!sink)
 {
     private Source source;
 
     @disable this();
 
+    /**
+     * Params:
+     *     source = Scores collected from a source file.
+     */
     this(Source source)
     {
         this.source = source;
@@ -221,28 +225,36 @@ if (isCallable!sink)
 
     /**
      * Params:
-     *     meter = The score statistics to print.
-     *     always = Produce output not looking at threshold.
      *     threshold = Function score limit.
+     *     moduleThreshold = Module score limit.
      */
-    void format(const bool always, Nullable!uint threshold)
+    void report(Nullable!uint threshold, Nullable!uint moduleThreshold)
     {
-        sink(this.source.filename);
-        sink(": ");
-        sink(this.source.score.to!string);
-        sink("\n");
+        const sourceScore = this.source.score;
+
+        if ((threshold.isNull && moduleThreshold.isNull)
+                || (!moduleThreshold.isNull && sourceScore > moduleThreshold.get))
+        {
+            sink("module ");
+            sink(this.source.moduleName);
+            sink(": ");
+            sink(sourceScore.to!string);
+            sink(" (");
+            sink(this.source.filename);
+            sink(")");
+            sink("\n");
+        }
 
         foreach (ref meter; this.source.inner[])
         {
-            traverse(meter, always, threshold, []);
+            traverse(meter, threshold, []);
         }
     }
 
     private void traverse(ref Meter meter,
-            const bool always, Nullable!uint threshold,
-            const string[] path)
+            Nullable!uint threshold, const string[] path)
     {
-        if (!always && !meter.isAbove(threshold))
+        if (!threshold.isNull && !meter.isAbove(threshold))
         {
             return;
         }
@@ -250,15 +262,19 @@ if (isCallable!sink)
 
         if (meter.type == Meter.Type.callable)
         {
-            sink("  ");
             sink(nameParts.join("."));
             sink(": ");
             sink(meter.score.to!string);
+            sink(" (");
+            sink(this.source.filename);
+            sink(":");
+            sink(to!string(meter.location.linnum));
+            sink(")");
             sink("\n");
         }
 
         meter.inner[].each!(meter => this.traverse(meter,
-                    always, threshold, nameParts));
+                threshold, nameParts));
     }
 }
 
@@ -268,20 +284,26 @@ if (isCallable!sink)
 struct Source
 {
     /// Module name.
-    string filename;
+    string moduleName = "main";
 
-    /// Identifiers representing packages.
-    Identifier[] packages = [];
+    /// Module file name.
+    private string filename_;
 
     /**
      * Params:
      *     inner = List with module metrics.
-     *     filename = Module name.
+     *     filename = Module file name.
      */
-    public this(List!Meter inner, string filename = "main")
+    this(List!Meter inner, string filename = "-")
+    @nogc nothrow pure @safe
     {
         this.inner = inner;
-        this.filename = filename;
+        this.filename_ = filename;
+    }
+
+    @property string filename() @nogc nothrow pure @safe
+    {
+        return this.filename_;
     }
 
     /**
@@ -312,7 +334,7 @@ struct Source
  * Returns: $(D_KEYWORD true) if the score exceeds the threshold, otherwise
  *          returns $(D_KEYWORD false).
  */
-bool printMeter(Source source, Nullable!uint threshold,
+bool report(Source source, Nullable!uint threshold,
         Nullable!uint moduleThreshold, Nullable!OutputFormat format)
 {
     const sourceScore = source.score;
@@ -324,22 +346,14 @@ bool printMeter(Source source, Nullable!uint threshold,
         return aboveAnyThreshold;
     }
 
-    if (aboveAnyThreshold
-            || format == nullable(OutputFormat.verbose
-            || (moduleThreshold.isNull && threshold.isNull)))
+    if (format == nullable(OutputFormat.verbose))
     {
-        if (format == nullable(OutputFormat.verbose))
-        {
-            VerboseFormatter!write(source).format();
-        }
-        else if (aboveModuleThreshold || format == nullable(OutputFormat.flat))
-        {
-            FlatFormatter!write(source).format(true, threshold);
-        }
-        else
-        {
-            FlatFormatter!write(source).format(false, threshold);
-        }
+        VerboseReporter!write(source).report();
+    }
+    else if (aboveAnyThreshold
+        || (moduleThreshold.isNull && threshold.isNull))
+    {
+        FlatReporter!write(source).report(threshold, moduleThreshold);
     }
 
     return aboveAnyThreshold;
