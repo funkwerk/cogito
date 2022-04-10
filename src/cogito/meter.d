@@ -79,16 +79,29 @@ struct Meter
     {
         auto stringName = this.scoreScope.identifier.toString();
 
-        switch (stringName)
+        if (stringName.empty)
         {
-            case "":
-                return "(λ)";
-            case "__ctor":
-                return "this";
-            case "__dtor":
-                return "~this";
-            default:
-                return stringName;
+            return "(λ)";
+        }
+        else if (stringName == "__ctor")
+        {
+            return "this";
+        }
+        else if (stringName == "__dtor")
+        {
+            return "~this";
+        }
+        else if (stringName.startsWith("_sharedStaticCtor_"))
+        {
+            return "shared static this";
+        }
+        else if (stringName.startsWith("_sharedStaticDtor_"))
+        {
+            return "shared static ~this";
+        }
+        else
+        {
+            return stringName;
         }
     }
 
