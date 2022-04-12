@@ -14,11 +14,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    
-    - uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 3.1
-
+   
     - name: Cache
       uses: actions/cache@v2
       with:
@@ -27,13 +23,32 @@ jobs:
         restore-keys: ${{ runner.os }}-test-
 
     - name: Install dependencies
-      run: ruby make.rb install
-
-    - name: Build binary
-      run: ruby make.rb release
+      run: make install
 
     - name: Run tests
-      run: ruby make.rb test
+      run: make test
+
+  selftest:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+   
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: '~/.dub'
+        key: ${{ runner.os }}-selftest-${{ hashFiles('**/dub.json') }}
+        restore-keys: ${{ runner.os }}-selftest-
+
+    - name: Install dependencies
+      run: make install
+
+    - name: Build binary
+      run: make build/release/bin/cogito
+
+    - name: Run
+      run: find src -name "*.d" -print0 | xargs -0 ./build/release/bin/cogito
 
   audit:
     runs-on: ubuntu-latest

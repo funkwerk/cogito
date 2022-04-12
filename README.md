@@ -7,20 +7,23 @@ cōgitō analyses D code and calculates its [cognitive complexity].
 
 ## Installing and usage
 
-Run `./make.rb install release`.
+Run `make install build/release/bin/cogito`.
 
 It will download and install the frontend and build a binary.
 Then you can run it on some D source:
 
-Run `./build/cogito sample/sample.d`.
+Run `./build/release/bin/cogito src/main.d`.
 
 ## Example output
 
 ```
-sample/sample.d:
-  f:
-    Location (line): 3
-    Score: 4
+module app: 7 (src/main.d)
+accumulateResult: 5 (src/main.d:9)
+accumulateResult.(λ): 0 (src/main.d:12)
+accumulateResult.(λ): 2 (src/main.d:16)
+main: 2 (src/main.d:33)
+main.(λ): 0 (src/main.d:36)
+main.(λ): 2 (src/main.d:42)
 ```
 
 [cognitive complexity]: https://sonarsource.com/docs/CognitiveComplexity.pdf
