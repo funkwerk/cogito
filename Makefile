@@ -1,6 +1,6 @@
 .PHONY: clean debug release test install
 
-DC=./tools/dmd2/linux/bin64/dmd
+DC=$(realpath ./tools/dmd2/linux/bin64/dmd)
 DUB=./tools/dmd2/linux/bin64/dub
 DFLAGS=
 
@@ -9,6 +9,9 @@ debug: dmd.a
 	$(DUB) build --build=debug --config=executable
 
 release: build/release/bin/cogito
+	git describe | \
+		sed -e 's#v\(.*\)#build/cogito-\1#' | \
+		xargs -I '{}' rm -rf '{}'
 	git describe | \
 		sed -e 's#v\(.*\)#build/cogito-\1#' | \
 		xargs -I '{}' mv build/release '{}'
