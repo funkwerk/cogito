@@ -91,6 +91,10 @@ struct Meter
         {
             return "~this";
         }
+        else if (stringName == "__postblit")
+        {
+            return "this(this)";
+        }
         else if (stringName.startsWith("_sharedStaticCtor_"))
         {
             return "shared static this";

@@ -292,7 +292,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     {
         debug writeln("Union ", statement);
 
-        // Interfaces are handled as StructDeclarations
+        // Unions are handled as StructDeclarations
         super.visit(statement);
     }
 
