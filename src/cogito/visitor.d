@@ -340,7 +340,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         stepInAggregate!(AST.ClassDeclaration)(classDeclaration);
     }
 
-    private void stepInAggregate(Declaration : AST.AggregateDeclaration)(Declaration declaration)
+    private void stepInAggregate(Declaration : AST.Dsymbol)(Declaration declaration)
     {
         auto newMeter = Meter(declaration.ident, declaration.loc, Meter.Type.aggregate);
         auto parent = this.parent;
@@ -394,11 +394,11 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         super.visit(s);
     }
 
-    override void visit(AST.Type type_)
+    override void visit(AST.TemplateDeclaration declaration)
     {
-        debug writeln("Type ", type_);
+        debug writeln("Template declaration ", declaration);
 
-        super.visit(type_);
+        stepInAggregate!(AST.TemplateDeclaration)(declaration);
     }
 
     override void visit(AST.BinExp expression)

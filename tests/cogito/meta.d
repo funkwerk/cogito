@@ -186,3 +186,48 @@ void f()
 
     assert(meter.tryMatch!((Source source) => source.score) == 2);
 }
+
+@("struct template identifier")
+unittest
+{
+    auto meter = runOnCode(q{
+struct S(T)
+{
+    void f()
+    {
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.inner).front.name == "S");
+}
+
+@("class template identifier")
+unittest
+{
+    auto meter = runOnCode(q{
+class C(T)
+{
+    void f()
+    {
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.inner).front.name == "C");
+}
+
+@("template identifier")
+unittest
+{
+    auto meter = runOnCode(q{
+template T()
+{
+    void f()
+    {
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.inner).front.name == "T");
+}

@@ -8,14 +8,13 @@ debug: DFLAGS += -debug
 debug: dmd.a
 	$(DUB) build --build=debug --config=executable
 
+release: build/githash.txt
 release: build/release/bin/cogito
-	git describe | \
-		sed -e 's#v\(.*\)#build/cogito-\1#' | \
+	sed -e 's#v\(.*\)#build/cogito-\1#' build/githash.txt | \
 		xargs -I '{}' rm -rf '{}'
-	git describe | \
-		sed -e 's#v\(.*\)#build/cogito-\1#' | \
+	sed -e 's#v\(.*\)#build/cogito-\1#' build/githash.txt | \
 		xargs -I '{}' mv build/release '{}'
-	cd build && git describe | sed -e 's#v\(.*\)#cogito-\1#' | xargs -I '{}' zip -r '{}.zip' '{}'
+	cd build && sed -e 's#v\(.*\)#cogito-\1#' githash.txt | xargs -I '{}' zip -r '{}.zip' '{}'
 
 build/release/bin/cogito: DFLAGS += -release
 build/release/bin/cogito: dmd.a
@@ -23,6 +22,9 @@ build/release/bin/cogito:
 	$(DUB) build --build=release --config=executable
 	mkdir -p build/release/bin
 	mv build/cogito build/release/bin
+
+build/githash.txt:
+	git describe | tee $@
 
 build/test: dmd.a
 	$(DUB) build --build=unittest --config=unittest
