@@ -138,15 +138,15 @@ struct Meter
      * Returns: $(D_KEYWORD true) if any function inside the current node
      *          excceds the threshold, otherwise $(D_KEYWORD false).
      */
-    bool isAbove(Nullable!uint threshold)
+    bool isAbove(uint threshold)
     {
-        if (threshold.isNull)
+        if (threshold == 0)
         {
             return false;
         }
         if (this.type == Type.callable)
         {
-            return this.score > threshold.get;
+            return this.score > threshold;
         }
         else
         {
@@ -245,12 +245,12 @@ if (isCallable!sink)
      *     threshold = Function score limit.
      *     moduleThreshold = Module score limit.
      */
-    void report(Nullable!uint threshold, Nullable!uint moduleThreshold)
+    void report(uint threshold, uint moduleThreshold)
     {
         const sourceScore = this.source.score;
 
-        if ((threshold.isNull && moduleThreshold.isNull)
-                || (!moduleThreshold.isNull && sourceScore > moduleThreshold.get))
+        if ((threshold == 0 && moduleThreshold == 0)
+                || (moduleThreshold != 0 && sourceScore > moduleThreshold))
         {
             sink("module ");
             sink(this.source.moduleName);
@@ -269,9 +269,9 @@ if (isCallable!sink)
     }
 
     private void traverse(ref Meter meter,
-            Nullable!uint threshold, const string[] path)
+            uint threshold, const string[] path)
     {
-        if (!threshold.isNull && !meter.isAbove(threshold))
+        if (threshold != 0 && !meter.isAbove(threshold))
         {
             return;
         }
@@ -327,9 +327,9 @@ struct Source
      * Returns: $(D_KEYWORD true) if any function inside the current node
      *          excceds the threshold, otherwise $(D_KEYWORD false).
      */
-    bool isAbove(Nullable!uint threshold)
+    bool isAbove(uint threshold)
     {
-        if (threshold.isNull)
+        if (threshold == 0)
         {
             return false;
         }
@@ -351,12 +351,12 @@ struct Source
  * Returns: $(D_KEYWORD true) if the score exceeds the threshold, otherwise
  *          returns $(D_KEYWORD false).
  */
-bool report(Source source, Nullable!uint threshold,
-        Nullable!uint moduleThreshold, Nullable!OutputFormat format)
+bool report(Source source, uint threshold,
+        uint moduleThreshold, OutputFormat format)
 {
     const sourceScore = source.score;
-    const bool aboveModuleThreshold = !moduleThreshold.isNull
-        && sourceScore > moduleThreshold.get;
+    const bool aboveModuleThreshold = moduleThreshold != 0
+        && sourceScore > moduleThreshold;
     const bool aboveAnyThreshold = aboveModuleThreshold || source.isAbove(threshold);
     if (format == nullable(OutputFormat.silent))
     {
@@ -367,8 +367,7 @@ bool report(Source source, Nullable!uint threshold,
     {
         VerboseReporter!write(source).report();
     }
-    else if (aboveAnyThreshold
-        || (moduleThreshold.isNull && threshold.isNull))
+    else if (aboveAnyThreshold || (moduleThreshold == 0 && threshold == 0))
     {
         FlatReporter!write(source).report(threshold, moduleThreshold);
     }

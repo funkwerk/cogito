@@ -2,14 +2,38 @@
 	"authors": [
 		"Eugen Wissner"
 	],
+	"configurations": [
+		{
+			"mainSourceFile": "src/main.d",
+			"name": "executable",
+			"targetType": "executable"
+		},
+		{
+			"dependencies": {
+				"unit-threaded": "~>2.0.3"
+			},
+			"excludedSourceFiles": [
+				"src/main.d"
+			],
+			"mainSourceFile": "tests/app.d",
+			"name": "unittest",
+			"sourcePaths": [
+				"tests"
+			],
+			"targetName": "test",
+			"targetType": "executable"
+		}
+	],
+	"dependencies": {
+		"argparse": "~>0.8.0"
+	},
 	"description": " Cognitive Complexity code metric for D",
-	"license": "MPL-2.0",
-	"name": "cogito",
 	"importPaths": [
 		"tools/dmd2/src/dmd",
 		"src"
 	],
-	"versions": ["MARS", "NoMain"],
+	"license": "MPL-2.0",
+	"name": "cogito",
 	"sourceFiles": [
 		"build/dmd.a"
 	],
@@ -18,26 +42,8 @@
 		"include"
 	],
 	"targetPath": "build",
-	"configurations": [
-		{
-			"name": "executable",
-			"targetType": "executable",
-			"mainSourceFile": "src/main.d"
-		},
-		{
-			"name": "unittest",
-			"targetType": "executable",
-			"targetName": "test",
-			"sourcePaths": [
-				"tests"
-			],
-			"mainSourceFile": "tests/app.d",
-			"dependencies": {
-				"unit-threaded": "~>2.0.3"
-			},
-			"excludedSourceFiles": [
-				"src/main.d"
-			]
-		}
+	"versions": [
+		"MARS",
+		"NoMain"
 	]
 }

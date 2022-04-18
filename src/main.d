@@ -1,9 +1,9 @@
 import cogito;
 
+import argparse : Main, parseCLIArgs;
 import cogito.arguments;
 import std.algorithm;
 import std.sumtype;
-import std.stdio;
 import std.functional;
 
 int accumulateResult(Arguments arguments, int accumulator, Result result)
@@ -11,7 +11,7 @@ int accumulateResult(Arguments arguments, int accumulator, Result result)
     auto nextResult = match!(
         (List!CognitiveError errors) {
             printErrors(errors);
-            return 1;
+            return 2;
         },
         (Source source) {
             const result = report(source, arguments.threshold,
@@ -19,9 +19,9 @@ int accumulateResult(Arguments arguments, int accumulator, Result result)
             return result ? 3 : 0;
         }
     )(result);
-    if (accumulator == 1 || nextResult == 1)
+    if (accumulator == 2 || nextResult == 2)
     {
-        return 1;
+        return 2;
     }
     else if (accumulator != 0)
     {
@@ -30,24 +30,7 @@ int accumulateResult(Arguments arguments, int accumulator, Result result)
     return nextResult;
 }
 
-int main(string[] args)
-{
-    return parseArguments(args).match!(
-        (ArgumentError error) {
-            writeln(error);
-            writeln(help);
-
-            return 2;
-        },
-        (Arguments arguments) {
-            if (arguments.help)
-            {
-                write(help);
-                return 0;
-            }
-            auto meter = runOnFiles(arguments.files);
-
-            return meter.fold!(partial!(accumulateResult, arguments))(0);
-        }
-    );
-}
+mixin Main.parseCLIArgs!(Arguments, (arguments) {
+    return runOnFiles(arguments.files)
+        .fold!(partial!(accumulateResult, arguments))(0);
+});
