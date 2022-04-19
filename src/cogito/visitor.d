@@ -478,13 +478,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         if (declaration.decl)
         {
             increase(max(1, this.depth));
-
-            ++this.depth;
-            foreach (de; *declaration.decl)
-            {
-                de.accept(this);
-            }
-            --this.depth;
+            visitNestedDeclarations(declaration);
         }
         visitStaticElseDeclaration(declaration.elsedecl);
     }
@@ -499,33 +493,39 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         {
             increase;
         }
-        foreach (elseDeclaration; *declaration)
-        {
-            if (strcmp(elseDeclaration.kind, "static if") == 0)
-            {
-                auto elseIf = cast(AST.StaticIfDeclaration) elseDeclaration;
-                if (elseIf.decl !is null)
-                {
-                    increase;
+        each!(x => forEachStaticElseDeclaration(x))((*declaration)[]);
+    }
 
-                    ++this.depth;
-                    foreach (de; *elseIf.decl)
-                    {
-                        de.accept(this);
-                    }
-                    --this.depth;
-                }
-                visitStaticElseDeclaration(elseIf.elsedecl);
-            }
-            else
+    private void forEachStaticElseDeclaration(AST.Dsymbol elseDeclaration)
+    {
+        if (strcmp(elseDeclaration.kind, "static if") == 0)
+        {
+            auto elseIf = cast(AST.StaticIfDeclaration) elseDeclaration;
+            if (elseIf.decl !is null)
             {
                 increase;
-
-                ++this.depth;
-                elseDeclaration.accept(this);
-                --this.depth;
+                visitNestedDeclarations(elseIf);
             }
+            visitStaticElseDeclaration(elseIf.elsedecl);
         }
+        else
+        {
+            increase;
+
+            ++this.depth;
+            elseDeclaration.accept(this);
+            --this.depth;
+        }
+    }
+
+    private void visitNestedDeclarations(ref AST.StaticIfDeclaration elseIf)
+    {
+        ++this.depth;
+        foreach (de; *elseIf.decl)
+        {
+            de.accept(this);
+        }
+        --this.depth;
     }
 
     override void visit(AST.ConditionalStatement statement)
