@@ -237,3 +237,34 @@ void f() {
 
     assert(meter.tryMatch!((Source source) => source.score) == 2);
 }
+
+@("else-if in aggregate function")
+unittest
+{
+    auto meter = runOnCode(q{
+struct S
+{
+    @property const(char)[] name()
+    {
+        if (stringName.empty)
+        {
+            return "(λ)";
+        }
+        else if (stringName == "__ctor")
+        {
+            return "this";
+        }
+        else if (stringName == "__dtor")
+        {
+            return "~this";
+        }
+        else
+        {
+            return stringName;
+        }
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 4);
+}

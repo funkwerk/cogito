@@ -437,7 +437,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
             --this.depth;
         }
         visitElseStatement(statement.elsebody);
-
     }
 
     private void visitElseStatement(AST.Statement statement)
@@ -457,7 +456,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
                 elseIf.ifbody.accept(this);
                 --this.depth;
             }
-            visitStaticElseStatement(elseIf.elsebody);
+            visitElseStatement(elseIf.elsebody);
         }
         else
         {
