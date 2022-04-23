@@ -8,6 +8,8 @@ debug: DFLAGS += -debug
 debug: dmd.a
 	$(DUB) build --build=debug --config=executable
 
+release: DC=ldmd2
+release: DUB=dub
 release: build/githash.txt
 release: build/release/bin/cogito
 	sed -e 's#v\(.*\)#build/cogito-\1#' build/githash.txt | \
@@ -34,7 +36,12 @@ test: build/test
 	./build/test -s
 
 %.a: $(wildcard ./tools/dmd2/src/dmd/dmd/*.d ./tools/dmd2/src/dmd/dmd/*/*.d)
-	$(DC) $(DFLAGS) -lib -version=MARS -version=NoMain -J=./include -J=./tools/dmd2/src/dmd/dmd/res -od=build -I=./tools/dmd2/src/dmd -of=$@ $^
+	$(DC) $(DFLAGS) -lib \
+		-version=MARS -version=NoMain \
+		-J=./include -J=./tools/dmd2/src/dmd/dmd/res \
+		-I=./tools/dmd2/src/dmd \
+		-od=build -of=$@ $^
+
 
 install: include/VERSION
 	cat include/VERSION | \
