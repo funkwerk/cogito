@@ -10,7 +10,7 @@ private enum string returnCodes = q"HELP
     0  Success
     1  Command line arguments are invalid
     2  Some source files contain errors
-    3  Excess of threshold
+    3  Threshold violation
 HELP";
 
 /**
