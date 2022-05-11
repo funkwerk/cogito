@@ -279,14 +279,14 @@ if (isCallable!sink)
 
         if (meter.type == Meter.Type.callable)
         {
-            sink(nameParts.join("."));
-            sink(": ");
-            sink(meter.score.to!string);
-            sink(" (");
             sink(this.source.filename);
             sink(":");
             sink(to!string(meter.location.linnum));
-            sink(")");
+            sink(": ");
+            sink("function ");
+            sink(nameParts.join("."));
+            sink(": ");
+            sink(meter.score.to!string);
             sink("\n");
         }
 
