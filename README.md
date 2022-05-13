@@ -29,9 +29,23 @@ accumulateResult.(λ): 2 (src/main.d:16)
 Property name | Allowed values | Description
 -------------------|------------------|-----
 --threshold | Positive numbers | Fail if the source score exceeds this threshold.
+--aggregate-threshold | Positive numbers | Fail if an aggregate score exceeds this threshold.
 --module-threshold | Positive numbers | Fail if a function score exceeds this threshold.
---format | `flat`, `verbose` and `silent` | Flat format outputs all functions with their source file name and line number. Verbose output adds column numbers and scores inside aggregates. Silent format produces no output, but returns an error if one of the thresholds is exceeded.
+--format | `flat`, `verbose`, `debug` and `silent` | See below.
 --help | – | Show a help message.
+
+## Formats
+
+Flat format outputs only the functions violating a limit. If no limits
+are set, it prints all functions with their source file name and line
+number.
+
+Verbose is the same as flat but it always prints all scores.
+
+Debug output adds column numbers and scores inside aggregates.
+
+Silent format produces no output, but returns an error if one of the
+thresholds is exceeded.
 
 ## Return codes
 

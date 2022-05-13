@@ -14,8 +14,8 @@ int accumulateResult(Arguments arguments, int accumulator, Result result)
             return 2;
         },
         (Source source) {
-            const result = report(source, arguments.threshold,
-                    arguments.moduleThreshold, arguments.format);
+            const threshold = Threshold(arguments.threshold, arguments.aggregateThreshold, arguments.moduleThreshold);
+            const result = report(source, threshold, arguments.format);
             return result ? 3 : 0;
         }
     )(result);

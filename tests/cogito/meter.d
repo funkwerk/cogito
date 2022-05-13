@@ -20,7 +20,7 @@ unittest
     auto output = appender!string();
     auto reporter = FlatReporter!((string x) => output.put(x))(source);
 
-    reporter.report(1, 50);
+    reporter.report(Threshold(1, 50));
 
     assert(output.data == "filename.d:2: function (λ): 3\n");
 }
@@ -39,7 +39,7 @@ unittest
     auto output = appender!string();
     auto reporter = FlatReporter!((string x) => output.put(x))(source);
 
-    reporter.report(1, 50);
+    reporter.report(Threshold(1, 50));
 
     assert(output.data == "filename.d:2: function f: 3\n");
 }

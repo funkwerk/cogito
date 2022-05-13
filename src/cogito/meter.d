@@ -135,18 +135,27 @@ struct Meter
     }
 
     /**
-     * Returns: $(D_KEYWORD true) if any function inside the current node
-     *          excceds the threshold, otherwise $(D_KEYWORD false).
+     * Returns: $(D_KEYWORD true) if any function or aggregate inside the
+     *          current node excceds the threshold, otherwise
+     *          $(D_KEYWORD false).
      */
-    bool isAbove(uint threshold)
+    bool isAbove(Threshold threshold)
     {
-        if (threshold == 0)
+        if (threshold.noneSet)
         {
             return false;
         }
-        if (this.type == Type.callable)
+        if (threshold.function_ != 0
+                && this.type == Type.callable
+                && this.score > threshold.function_)
         {
-            return this.score > threshold;
+            return true;
+        }
+        else if (threshold.aggregate != 0
+                && this.type == Type.aggregate
+                && this.score > threshold.aggregate)
+        {
+            return true;
         }
         else
         {
@@ -163,7 +172,7 @@ struct Meter
  * Params:
  *     sink = Function used to print the information.
  */
-struct VerboseReporter(alias sink)
+struct DebugReporter(alias sink)
 if (isCallable!sink)
 {
     private Source source;
@@ -242,15 +251,14 @@ if (isCallable!sink)
 
     /**
      * Params:
-     *     threshold = Function score limit.
-     *     moduleThreshold = Module score limit.
+     *     threshold = Score limits.
      */
-    void report(uint threshold, uint moduleThreshold)
+    void report(Threshold threshold)
     {
         const sourceScore = this.source.score;
 
-        if ((threshold == 0 && moduleThreshold == 0)
-                || (moduleThreshold != 0 && sourceScore > moduleThreshold))
+        if (threshold.noneSet
+                || (threshold.module_ != 0 && sourceScore > threshold.module_))
         {
             sink("module ");
             sink(this.source.moduleName);
@@ -269,25 +277,41 @@ if (isCallable!sink)
     }
 
     private void traverse(ref Meter meter,
-            uint threshold, const string[] path)
+            Threshold threshold, const string[] path)
     {
-        if (threshold != 0 && !meter.isAbove(threshold))
+        if ((threshold.function_ != 0 || threshold.aggregate != 0)
+                && !meter.isAbove(threshold))
         {
             return;
         }
         const nameParts = path ~ [meter.name.idup];
 
-        if (meter.type == Meter.Type.callable)
+        final switch (meter.type)
         {
-            sink(this.source.filename);
-            sink(":");
-            sink(to!string(meter.location.linnum));
-            sink(": ");
-            sink("function ");
-            sink(nameParts.join("."));
-            sink(": ");
-            sink(meter.score.to!string);
-            sink("\n");
+            case Meter.Type.callable:
+                sink(this.source.filename);
+                sink(":");
+                sink(to!string(meter.location.linnum));
+                sink(": ");
+                sink("function ");
+                sink(nameParts.join("."));
+                sink(": ");
+                sink(meter.score.to!string);
+                sink("\n");
+
+                break;
+            case Meter.Type.aggregate:
+                sink(this.source.filename);
+                sink(":");
+                sink(to!string(meter.location.linnum));
+                sink(": ");
+                sink("aggregate ");
+                sink(nameParts.join("."));
+                sink(": ");
+                sink(meter.score.to!string);
+                sink("\n");
+
+                break;
         }
 
         meter.inner[].each!(meter => this.traverse(meter,
@@ -327,16 +351,46 @@ struct Source
      * Returns: $(D_KEYWORD true) if any function inside the current node
      *          excceds the threshold, otherwise $(D_KEYWORD false).
      */
-    bool isAbove(uint threshold)
+    bool isAbove(Threshold threshold)
     {
-        if (threshold == 0)
+        if (threshold.noneSet)
         {
             return false;
         }
-        return reduce!((accum, x) => accum || x.isAbove(threshold))(false, this.inner[]);
+        else if (threshold.module_ != 0 && this.score > threshold.module_)
+        {
+            return true;
+        }
+        else
+        {
+            return reduce!((accum, x) => accum || x.isAbove(threshold))(false, this.inner[]);
+        }
     }
 
     mixin Ruler!();
+}
+
+/**
+ * Supported threshold values.
+ */
+struct Threshold
+{
+    /// Function threshold.
+    uint function_;
+
+    /// Aggregate threshold.
+    uint aggregate;
+
+    /// Module threshold.
+    uint module_;
+
+    /**
+     * Returns: Whether none threshold is set.
+     */
+    bool noneSet()
+    {
+        return this.function_ == 0 && this.aggregate == 0 && this.module_ == 0;
+    }
 }
 
 /**
@@ -344,32 +398,31 @@ struct Source
  *
  * Params:
  *     source = Collected metrics and scores.
- *     threshold = Maximum acceptable function score.
- *     moduleThreshold = Maximum acceptable module score.
+ *     threshold = Maximum acceptable scores.
  *     format = Output format.
  *
  * Returns: $(D_KEYWORD true) if the score exceeds the threshold, otherwise
  *          returns $(D_KEYWORD false).
  */
-bool report(Source source, uint threshold,
-        uint moduleThreshold, OutputFormat format)
+bool report(Source source, Threshold threshold, OutputFormat format)
 {
-    const sourceScore = source.score;
-    const bool aboveModuleThreshold = moduleThreshold != 0
-        && sourceScore > moduleThreshold;
-    const bool aboveAnyThreshold = aboveModuleThreshold || source.isAbove(threshold);
-    if (format == nullable(OutputFormat.silent))
+    const bool aboveAnyThreshold = source.isAbove(threshold);
+
+    if (format == OutputFormat.silent)
     {
         return aboveAnyThreshold;
     }
-
-    if (format == nullable(OutputFormat.verbose))
+    else if (format == OutputFormat.debug_)
     {
-        VerboseReporter!write(source).report();
+        DebugReporter!write(source).report();
     }
-    else if (aboveAnyThreshold || (moduleThreshold == 0 && threshold == 0))
+    else if (format == OutputFormat.verbose)
     {
-        FlatReporter!write(source).report(threshold, moduleThreshold);
+        FlatReporter!write(source).report(Threshold());
+    }
+    else if (aboveAnyThreshold || threshold.noneSet)
+    {
+        FlatReporter!write(source).report(threshold);
     }
 
     return aboveAnyThreshold;
