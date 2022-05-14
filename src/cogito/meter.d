@@ -59,7 +59,12 @@ struct Meter
     enum Type
     {
         aggregate, /// Aggregate.
-        callable /// Function.
+        callable, /// Function.
+        class_, /// Class.
+        interface_, /// Interface.
+        struct_, /// Struct.
+        template_, /// Template.
+        union_, /// Union.
     }
     private Type type;
 
@@ -152,7 +157,7 @@ struct Meter
             return true;
         }
         else if (threshold.aggregate != 0
-                && this.type == Type.aggregate
+                && this.type != Type.callable // Aggregate.
                 && this.score > threshold.aggregate)
         {
             return true;
@@ -164,6 +169,27 @@ struct Meter
     }
 
     mixin Ruler!();
+}
+
+private string typeToString(Meter.Type meterType)
+{
+    final switch(meterType) with (Meter.Type)
+    {
+        case aggregate:
+             return "aggregate";
+        case callable:
+             return "function";
+        case class_:
+             return "class";
+        case interface_:
+             return "interface";
+        case struct_:
+             return "struct";
+        case template_:
+             return "template";
+        case union_:
+             return "union";
+    }
 }
 
 /**
@@ -286,33 +312,16 @@ if (isCallable!sink)
         }
         const nameParts = path ~ [meter.name.idup];
 
-        final switch (meter.type)
-        {
-            case Meter.Type.callable:
-                sink(this.source.filename);
-                sink(":");
-                sink(to!string(meter.location.linnum));
-                sink(": ");
-                sink("function ");
-                sink(nameParts.join("."));
-                sink(": ");
-                sink(meter.score.to!string);
-                sink("\n");
-
-                break;
-            case Meter.Type.aggregate:
-                sink(this.source.filename);
-                sink(":");
-                sink(to!string(meter.location.linnum));
-                sink(": ");
-                sink("aggregate ");
-                sink(nameParts.join("."));
-                sink(": ");
-                sink(meter.score.to!string);
-                sink("\n");
-
-                break;
-        }
+        sink(this.source.filename);
+        sink(":");
+        sink(to!string(meter.location.linnum));
+        sink(": ");
+        sink(typeToString(meter.type));
+        sink(" ");
+        sink(nameParts.join("."));
+        sink(": ");
+        sink(meter.score.to!string);
+        sink("\n");
 
         meter.inner[].each!(meter => this.traverse(meter,
                 threshold, nameParts));

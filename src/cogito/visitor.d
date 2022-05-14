@@ -14,6 +14,38 @@ import std.stdio;
 
 alias AST = ASTCodegen;
 
+private Meter.Type declarationType(Declaration : AST.Dsymbol)(Declaration declaration)
+{
+    if (declaration.isUnionDeclaration())
+    {
+        return Meter.Type.union_;
+    }
+    else if (declaration.isStructDeclaration())
+    {
+        return Meter.Type.struct_;
+    }
+    else if (declaration.isInterfaceDeclaration())
+    {
+        return Meter.Type.interface_;
+    }
+    else if (declaration.isClassDeclaration())
+    {
+        return Meter.Type.class_;
+    }
+    else if (declaration.isTemplateDeclaration())
+    {
+        return Meter.Type.template_;
+    }
+    return Meter.Type.aggregate;
+}
+
+private string moduleName(AST.ModuleDeclaration* moduleDeclaration)
+{
+    return moduleDeclaration is null
+        ? "app"
+        : moduleDeclaration.toString.idup;
+}
+
 extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 {
     alias visit = SemanticTimeTransitiveVisitor.visit;
@@ -64,213 +96,10 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         }
     }
 
-    override void visit(AST.Dsymbol symbol)
-    {
-        debug printf("Symbol %s\n", symbol.toPrettyChars());
-
-        super.visit(symbol);
-    }
-
-    override void visit(AST.Expression expression)
-    {
-        debug writeln("Expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.TemplateParameter parameter)
-    {
-        debug writeln("Parameter ", parameter);
-
-        super.visit(parameter);
-    }
-
-    override void visit(AST.Condition condition)
-    {
-        debug writeln("Condition ", condition);
-
-        super.visit(condition);
-    }
-
-    override void visit(AST.Initializer initializer)
-    {
-        debug writeln("Initializer ", initializer);
-
-        super.visit(initializer);
-    }
-
-    override void visit(AST.PeelStatement statement)
-    {
-        debug writeln("Peel statement ", statement);
-
-        super.visit(statement);
-    }
-
-    override void visit(AST.UnrolledLoopStatement statement)
-    {
-        debug writeln("Unrolled loop statement ", statement);
-
-        super.visit(statement);
-    }
-
     override void visit(AST.DebugStatement statement)
     {
         debug writeln("Debug statement ", statement);
         // Handled as ConditionalStatement or Condition
-        super.visit(statement);
-    }
-
-    override void visit(AST.ForwardingStatement statement)
-    {
-        debug writeln("Forwarding statement ", statement);
-
-        super.visit(statement);
-    }
-
-    override void visit(AST.StructLiteralExp expression)
-    {
-        debug writeln("Struct literal expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.CompoundLiteralExp expression)
-    {
-        debug writeln("Compound literal expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.DotTemplateExp expression)
-    {
-        debug writeln("Dot template expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.DotVarExp expression)
-    {
-        debug writeln("dot var expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.DelegateExp expression)
-    {
-        debug writeln("Delegate expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.DelegatePtrExp expression)
-    {
-        debug writeln("Delegate pointer expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.DelegateFuncptrExp expression)
-    {
-        debug writeln("Delegate function pointer expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.DotTypeExp expression)
-    {
-        debug writeln("Dot type expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.VectorExp expression)
-    {
-        debug writeln("Vector expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.VectorArrayExp expression)
-    {
-        debug writeln("Vector array expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.SliceExp expression)
-    {
-        debug writeln("Slice expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.ArrayLengthExp expression)
-    {
-        debug writeln("Array length expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.DotExp expression)
-    {
-        debug writeln("Dot expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.IndexExp expression)
-    {
-        debug writeln("Index expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.RemoveExp expression)
-    {
-        debug writeln("Remove expression ", expression);
-
-        super.visit(expression);
-    }
-
-    override void visit(AST.Declaration declaration)
-    {
-        debug writeln("Declaration ", declaration);
-
-        super.visit(declaration);
-    }
-
-    override void visit(AST.ScopeDsymbol statement)
-    {
-        debug writeln("Scope symbol ", statement);
-
-        super.visit(statement);
-    }
-
-    override void visit(AST.Package statement)
-    {
-        debug writeln("Package ", statement);
-
-        super.visit(statement);
-    }
-
-    override void visit(AST.AggregateDeclaration statement)
-    {
-        debug writeln("Aggregate declaration ", statement);
-
-        super.visit(statement);
-    }
-
-    override void visit(AST.TupleDeclaration statement)
-    {
-        debug writeln("Tuple declaration ", statement);
-
-        super.visit(statement);
-    }
-
-    override void visit(AST.CtorDeclaration statement)
-    {
-        debug writeln("Constructor declaration ", statement);
-
         super.visit(statement);
     }
 
@@ -290,24 +119,13 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     override void visit(AST.UnionDeclaration statement)
     {
-        debug writeln("Union ", statement);
-
         // Unions are handled as StructDeclarations
         super.visit(statement);
     }
 
     override void visit(AST.InterfaceDeclaration statement)
     {
-        debug writeln("Interface ", statement);
-
         // Interfaces are handled as ClassDeclarations
-        super.visit(statement);
-    }
-
-    override void visit(AST.BitFieldDeclaration statement)
-    {
-        debug writeln(statement.stringof, ' ', statement);
-
         super.visit(statement);
     }
 
@@ -328,21 +146,20 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     override void visit(AST.StructDeclaration structDeclaration)
     {
-        debug writeln("Struct declaration ", structDeclaration);
-
         stepInAggregate!(AST.StructDeclaration)(structDeclaration);
     }
 
     override void visit(AST.ClassDeclaration classDeclaration)
     {
-        debug writeln("Class declaration ", classDeclaration);
-
         stepInAggregate!(AST.ClassDeclaration)(classDeclaration);
     }
 
     private void stepInAggregate(Declaration : AST.Dsymbol)(Declaration declaration)
     {
-        auto newMeter = Meter(declaration.ident, declaration.loc, Meter.Type.aggregate);
+        debug writeln("Aggregate declaration ", declaration);
+
+        auto meterType = declarationType(declaration);
+        auto newMeter = Meter(declaration.ident, declaration.loc, meterType);
         auto parent = this.parent;
         this.parent = &newMeter;
 
@@ -387,17 +204,8 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         this.meter.insert(newMeter);
     }
 
-    override void visit(AST.Statement s)
-    {
-        debug writeln("Statement ", s.stmt);
-
-        super.visit(s);
-    }
-
     override void visit(AST.TemplateDeclaration declaration)
     {
-        debug writeln("Template declaration ", declaration);
-
         stepInAggregate!(AST.TemplateDeclaration)(declaration);
     }
 
@@ -417,7 +225,8 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
         super.visit(expression);
 
-        if (expression.isLogicalExp()) {
+        if (expression.isLogicalExp())
+        {
             this.stack.removeFront();
         }
     }
@@ -497,33 +306,30 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
     private void forEachStaticElseDeclaration(AST.Dsymbol elseDeclaration)
     {
-        if (strcmp(elseDeclaration.kind, "static if") == 0)
-        {
-            auto elseIf = cast(AST.StaticIfDeclaration) elseDeclaration;
-            if (elseIf.decl !is null)
-            {
-                increase;
-                visitNestedDeclarations(elseIf);
-            }
-            visitStaticElseDeclaration(elseIf.elsedecl);
-        }
-        else
+        if (strcmp(elseDeclaration.kind, "static if") != 0)
         {
             increase;
 
             ++this.depth;
             elseDeclaration.accept(this);
             --this.depth;
+
+            return;
         }
+        auto elseIf = cast(AST.StaticIfDeclaration) elseDeclaration;
+
+        if (elseIf.decl !is null)
+        {
+            increase;
+            visitNestedDeclarations(elseIf);
+        }
+        visitStaticElseDeclaration(elseIf.elsedecl);
     }
 
     private void visitNestedDeclarations(ref AST.StaticIfDeclaration elseIf)
     {
         ++this.depth;
-        foreach (de; *elseIf.decl)
-        {
-            de.accept(this);
-        }
+        each!(de => de.accept(this))(*elseIf.decl);
         --this.depth;
     }
 
@@ -551,26 +357,25 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
             return;
         }
         auto elseIf = statement.isConditionalStatement();
-        if (elseIf !is null)
-        {
-            if (elseIf.ifbody)
-            {
-                increase;
-
-                ++this.depth;
-                elseIf.ifbody.accept(this);
-                --this.depth;
-            }
-            visitStaticElseStatement(elseIf.elsebody);
-        }
-        else
+        if (elseIf is null)
         {
             increase;
 
             ++this.depth;
             statement.accept(this);
             --this.depth;
+
+            return;
         }
+        if (elseIf.ifbody)
+        {
+            increase;
+
+            ++this.depth;
+            elseIf.ifbody.accept(this);
+            --this.depth;
+        }
+        visitStaticElseStatement(elseIf.elsebody);
     }
 
     override void visit(AST.StaticForeachDeclaration foreachDeclaration)
@@ -630,9 +435,7 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     {
         debug writeln("Module declaration ", moduleDeclaration);
 
-        this.source_.moduleName = moduleDeclaration.md is null
-            ? "app"
-            : moduleDeclaration.md.toString.idup;
+        this.source_.moduleName = moduleName(moduleDeclaration.md);
 
         super.visit(moduleDeclaration);
     }
@@ -661,12 +464,9 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
             statement._body.accept(this);
         }
-        foreach (catch_; *statement.catches)
-        {
-            ++this.depth;
-            this.visit(catch_);
-            --this.depth;
-        }
+        ++this.depth;
+        each!(catch_ => this.visit(catch_))(*statement.catches);
+        --this.depth;
     }
 
     override void visit(AST.BreakStatement statement)
