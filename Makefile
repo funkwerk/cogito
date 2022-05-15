@@ -15,7 +15,7 @@ release: build/release/bin/cogito
 	sed -e 's#v\(.*\)#build/cogito-\1#' build/githash.txt | \
 		xargs -I '{}' rm -rf '{}'
 	sed -e 's#v\(.*\)#build/cogito-\1#' build/githash.txt | \
-		xargs -I '{}' mv build/release '{}'
+		xargs -I '{}' cp -a build/release '{}'
 	cd build && sed -e 's#v\(.*\)#cogito-\1#' githash.txt | xargs -I '{}' zip -r '{}.zip' '{}'
 
 build/release/bin/cogito: DFLAGS += -release
