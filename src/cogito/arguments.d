@@ -13,7 +13,9 @@ private enum string returnCodes = q"HELP
     0  Success
     1  Command line arguments are invalid
     2  Some source files contain errors
-    3  Threshold violation
+    3  Function threshold violation
+    4  Aggregate threshold violation
+    5  Module threshold violation
 HELP";
 
 /**

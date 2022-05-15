@@ -152,3 +152,75 @@ template T()
 
     assert(output.data.canFind("template T"));
 }
+
+@("FlatReporter reports only functions on function threshold violation")
+unittest
+{
+    auto meter = runOnCode(q{
+struct S
+{
+    void f()
+    {
+        if (true)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    void g()
+    {
+        if (true)
+        {
+        }
+        else
+        {
+        }
+    }
+}
+    });
+    auto output = appender!string();
+    auto reporter = meter.tryMatch!((Source source) =>
+            FlatReporter!((string x) => output.put(x))(source));
+
+    reporter.report(Threshold(1, 0));
+
+    assert(!output.data.canFind("struct S"));
+}
+
+@("FlatReporter reports only functions on function threshold violation if aggregate threshold is set")
+unittest
+{
+    auto meter = runOnCode(q{
+struct S
+{
+    void f()
+    {
+        if (true)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    void g()
+    {
+        if (true)
+        {
+        }
+        else
+        {
+        }
+    }
+}
+    });
+    auto output = appender!string();
+    auto reporter = meter.tryMatch!((Source source) =>
+            FlatReporter!((string x) => output.put(x))(source));
+
+    reporter.report(Threshold(1, 10));
+
+    assert(!output.data.canFind("struct S"));
+}

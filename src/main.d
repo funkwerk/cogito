@@ -16,7 +16,24 @@ int accumulateResult(Arguments arguments, int accumulator, Result result)
         (Source source) {
             const threshold = Threshold(arguments.threshold, arguments.aggregateThreshold, arguments.moduleThreshold);
             const result = report(source, threshold, arguments.format);
-            return result ? 3 : 0;
+
+            if (result.isNull)
+            {
+                return 0;
+            }
+            else if (result.get == Threshold.Type.function_)
+            {
+                return 3;
+            }
+            else if (result.get == Threshold.Type.aggregate)
+            {
+                return 4;
+            }
+            else if (result.get == Threshold.Type.module_)
+            {
+                return 5;
+            }
+            assert(false, "Unknown threshold type");
         }
     )(result);
     if (accumulator == 2 || nextResult == 2)

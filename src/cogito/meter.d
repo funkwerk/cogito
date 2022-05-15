@@ -140,31 +140,29 @@ struct Meter
     }
 
     /**
-     * Returns: $(D_KEYWORD true) if any function or aggregate inside the
-     *          current node excceds the threshold, otherwise
-     *          $(D_KEYWORD false).
+     * Returns: Type of the exceeded threshold or null.
      */
-    bool isAbove(Threshold threshold)
+    Nullable!(Threshold.Type) isAbove(Threshold threshold)
     {
         if (threshold.noneSet)
         {
-            return false;
+            return typeof(return)();
         }
         if (threshold.function_ != 0
                 && this.type == Type.callable
                 && this.score > threshold.function_)
         {
-            return true;
+            return nullable(Threshold.Type.function_);
         }
         else if (threshold.aggregate != 0
                 && this.type != Type.callable // Aggregate.
                 && this.score > threshold.aggregate)
         {
-            return true;
+            return nullable(Threshold.Type.aggregate);
         }
         else
         {
-            return reduce!((accum, x) => accum || x.isAbove(threshold))(false, this.inner[]);
+            return reduce!((accum, x) => accum.isNull ? x.isAbove(threshold) : accum)(typeof(return)(), this.inner[]);
         }
     }
 
@@ -305,26 +303,31 @@ if (isCallable!sink)
     private void traverse(ref Meter meter,
             Threshold threshold, const string[] path)
     {
-        if ((threshold.function_ != 0 || threshold.aggregate != 0)
-                && !meter.isAbove(threshold))
+        const noneSet = threshold.noneSet;
+        const exceededThreshold = meter.isAbove(threshold);
+
+        if (exceededThreshold.isNull && !noneSet)
         {
             return;
         }
         const nameParts = path ~ [meter.name.idup];
 
-        sink(this.source.filename);
-        sink(":");
-        sink(to!string(meter.location.linnum));
-        sink(": ");
-        sink(typeToString(meter.type));
-        sink(" ");
-        sink(nameParts.join("."));
-        sink(": ");
-        sink(meter.score.to!string);
-        sink("\n");
-
-        meter.inner[].each!(meter => this.traverse(meter,
-                threshold, nameParts));
+        if (noneSet
+                || (meter.type == Meter.Type.callable && exceededThreshold == nullable(Threshold.Type.function_))
+                || (meter.type != Meter.Type.callable && exceededThreshold == nullable(Threshold.Type.aggregate)))
+        {
+            sink(this.source.filename);
+            sink(":");
+            sink(to!string(meter.location.linnum));
+            sink(": ");
+            sink(typeToString(meter.type));
+            sink(" ");
+            sink(nameParts.join("."));
+            sink(": ");
+            sink(meter.score.to!string);
+            sink("\n");
+        }
+        meter.inner[].each!(meter => this.traverse(meter, threshold, nameParts));
     }
 }
 
@@ -357,22 +360,21 @@ struct Source
     }
 
     /**
-     * Returns: $(D_KEYWORD true) if any function inside the current node
-     *          excceds the threshold, otherwise $(D_KEYWORD false).
+     * Returns: Type of the exceeded threshold or null.
      */
-    bool isAbove(Threshold threshold)
+    Nullable!(Threshold.Type) isAbove(Threshold threshold)
     {
         if (threshold.noneSet)
         {
-            return false;
+            return typeof(return)();
         }
         else if (threshold.module_ != 0 && this.score > threshold.module_)
         {
-            return true;
+            return nullable(Threshold.Type.module_);
         }
         else
         {
-            return reduce!((accum, x) => accum || x.isAbove(threshold))(false, this.inner[]);
+            return reduce!((accum, x) => accum.isNull ? x.isAbove(threshold) : accum)(typeof(return)(), this.inner[]);
         }
     }
 
@@ -384,6 +386,16 @@ struct Source
  */
 struct Threshold
 {
+    /**
+     * Available thresholds.
+     */
+    enum Type
+    {
+        function_, /// Function.
+        aggregate, /// Aggregate.
+        module_, /// Module.
+    }
+
     /// Function threshold.
     uint function_;
 
@@ -413,9 +425,9 @@ struct Threshold
  * Returns: $(D_KEYWORD true) if the score exceeds the threshold, otherwise
  *          returns $(D_KEYWORD false).
  */
-bool report(Source source, Threshold threshold, OutputFormat format)
+Nullable!(Threshold.Type) report(Source source, Threshold threshold, OutputFormat format)
 {
-    const bool aboveAnyThreshold = source.isAbove(threshold);
+    const aboveAnyThreshold = source.isAbove(threshold);
 
     if (format == OutputFormat.silent)
     {
@@ -429,7 +441,7 @@ bool report(Source source, Threshold threshold, OutputFormat format)
     {
         FlatReporter!write(source).report(Threshold());
     }
-    else if (aboveAnyThreshold || threshold.noneSet)
+    else if (!aboveAnyThreshold.isNull || threshold.noneSet)
     {
         FlatReporter!write(source).report(threshold);
     }
