@@ -46,6 +46,80 @@ private string moduleName(AST.ModuleDeclaration* moduleDeclaration)
         : moduleDeclaration.toString.idup;
 }
 
+private mixin template VisitorHelper()
+{
+    /**
+     * Increases the score in the current or the top-level scope.
+     */
+    private void increase(uint by = 1U)
+    {
+        if (this.parent !is null)
+        {
+            this.parent.ownScore += by;
+        }
+        else
+        {
+            this.source.ownScore += by;
+        }
+    }
+
+    private void stepInFunction(T : AST.FuncDeclaration)(T declaration)
+    {
+        auto newMeter = Meter(declaration.ident, declaration.loc, Meter.Type.callable);
+        auto parent = this.parent;
+        this.parent = &newMeter;
+
+        ++this.depth;
+        super.visit(declaration);
+        --this.depth;
+
+        this.parent = parent;
+        this.meter.insert(newMeter);
+    }
+
+    private void stepInAggregate(Declaration : AST.Dsymbol)(Declaration declaration)
+    {
+        debug writeln("Aggregate declaration ", declaration);
+
+        auto meterType = declarationType(declaration);
+        auto newMeter = Meter(declaration.ident, declaration.loc, meterType);
+        auto parent = this.parent;
+        this.parent = &newMeter;
+
+        super.visit(declaration);
+
+        this.parent = parent;
+        this.meter.insert(newMeter);
+    }
+
+    private void stepInStaticDeclaration(T : ASTNode)(T declaration)
+    {
+        increase(max(this.depth, 1));
+
+        ++this.depth;
+        super.visit(declaration);
+        --this.depth;
+    }
+
+    private void stepInLoop(T : ASTNode)(T statement)
+    {
+         increase(this.depth);
+
+        ++this.depth;
+        super.visit(statement);
+        --this.depth;
+    }
+
+    private void stepInStatementWithLabel(T : AST.Statement)(T statement)
+    {
+        if (statement.ident !is null)
+        {
+            increase;
+        }
+        super.visit(statement);
+    }
+}
+
 extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 {
     alias visit = SemanticTimeTransitiveVisitor.visit;
@@ -79,21 +153,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
     @property ref Source source()
     {
         return this.source_;
-    }
-
-    /**
-     * Increases the score in the current or the top-level scope.
-     */
-    private void increase(uint by = 1U)
-    {
-        if (this.parent !is null)
-        {
-            this.parent.ownScore += by;
-        }
-        else
-        {
-            this.source.ownScore += by;
-        }
     }
 
     override void visit(AST.DebugStatement statement)
@@ -154,21 +213,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         stepInAggregate!(AST.ClassDeclaration)(classDeclaration);
     }
 
-    private void stepInAggregate(Declaration : AST.Dsymbol)(Declaration declaration)
-    {
-        debug writeln("Aggregate declaration ", declaration);
-
-        auto meterType = declarationType(declaration);
-        auto newMeter = Meter(declaration.ident, declaration.loc, meterType);
-        auto parent = this.parent;
-        this.parent = &newMeter;
-
-        super.visit(declaration);
-
-        this.parent = parent;
-        this.meter.insert(newMeter);
-    }
-
     override void visit(AST.FuncLiteralDeclaration declaration)
     {
         debug writeln("Function literal ", declaration);
@@ -190,23 +234,19 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         stepInFunction(declaration);
     }
 
-    private void stepInFunction(T : AST.FuncDeclaration)(T declaration)
-    {
-        auto newMeter = Meter(declaration.ident, declaration.loc, Meter.Type.callable);
-        auto parent = this.parent;
-        this.parent = &newMeter;
-
-        ++this.depth;
-        super.visit(declaration);
-        --this.depth;
-
-        this.parent = parent;
-        this.meter.insert(newMeter);
-    }
-
     override void visit(AST.TemplateDeclaration declaration)
     {
-        stepInAggregate!(AST.TemplateDeclaration)(declaration);
+        debug writeln("Template declaration ", declaration);
+
+        if (declaration.onemember !is null && declaration.members.length == 1)
+        {
+            // Ignore the template if it has only one member of the same name.
+            declaration.onemember.accept(this);
+        }
+        else
+        {
+            stepInAggregate!(AST.TemplateDeclaration)(declaration);
+        }
     }
 
     override void visit(AST.BinExp expression)
@@ -385,15 +425,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         stepInStaticDeclaration(foreachDeclaration);
     }
 
-    private void stepInStaticDeclaration(T : ASTNode)(T declaration)
-    {
-        increase(max(this.depth, 1));
-
-        ++this.depth;
-        super.visit(declaration);
-        --this.depth;
-    }
-
     override void visit(AST.WhileStatement whileStatement)
     {
         debug writeln("while statement ", whileStatement);
@@ -421,15 +452,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
         stepInLoop(foreachStatement);
     }
-
-    private void stepInLoop(T : ASTNode)(T statement)
-    {
-         increase(this.depth);
-
-        ++this.depth;
-        super.visit(statement);
-        --this.depth;
-   }
 
     override void visit(AST.Module moduleDeclaration)
     {
@@ -476,15 +498,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
         stepInStatementWithLabel(statement);
     }
 
-    private void stepInStatementWithLabel(T : AST.Statement)(T statement)
-    {
-        if (statement.ident !is null)
-        {
-            increase;
-        }
-        super.visit(statement);
-    }
-
     override void visit(AST.ContinueStatement statement)
     {
         debug writeln("Label ", statement);
@@ -505,4 +518,6 @@ extern(C++) final class CognitiveVisitor : SemanticTimeTransitiveVisitor
 
         stepInStaticDeclaration(condition);
     }
+
+    mixin VisitorHelper;
 }

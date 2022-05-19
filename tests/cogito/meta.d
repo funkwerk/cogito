@@ -231,3 +231,42 @@ template T()
 
     assert(meter.tryMatch!((Source source) => source.inner).front.name == "T");
 }
+
+@("template method")
+unittest
+{
+    auto meter = runOnCode(q{
+struct S
+{
+    void f()()
+    {
+        if (true)
+        {
+        }
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
+
+@("additional code in template with one member")
+unittest
+{
+    auto meter = runOnCode(q{
+struct S
+{
+    template f()
+    {
+        static if (true)
+        {
+        }
+        void f()
+        {
+        }
+    }
+}
+    });
+
+    assert(meter.tryMatch!((Source source) => source.score) == 1);
+}
