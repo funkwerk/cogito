@@ -62,7 +62,7 @@ private OutputFormat parseOutputFormat(string input)
 struct Arguments
 {
     /// Input files.
-    @(PositionalArgument(0).Description("Source files").Required())
+    @(PositionalArgument(0).Description("Source files or directories").Required())
     string[] files = [];
 
     /// Module threshold.
