@@ -5,6 +5,7 @@ import cogito.arguments;
 import std.algorithm;
 import std.sumtype;
 import std.functional;
+import std.stdio;
 
 int accumulateResult(Arguments arguments, int accumulator, Result result)
 {
@@ -48,6 +49,14 @@ int accumulateResult(Arguments arguments, int accumulator, Result result)
 }
 
 mixin Main.parseCLIArgs!(Arguments, (arguments) {
-    return runOnFiles(arguments.files)
-        .fold!(partial!(accumulateResult, arguments))(0);
+    try
+    {
+        return runOnFiles(arguments.files)
+            .fold!(partial!(accumulateResult, arguments))(0);
+    }
+    catch (Exception exception)
+    {
+        stderr.writefln!"Error: %s"(exception.msg);
+        return 1;
+    }
 });
