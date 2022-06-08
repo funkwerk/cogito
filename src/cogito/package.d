@@ -37,6 +37,35 @@ private Result runOnFile(string file)
 }
 
 /**
+ * Map a filename to an array of files.
+ *
+ * Params:
+ *     filename = file or directory name.
+ *
+ * Returns: Array of filenames.
+ *   If the filename points to a folder all d-files are returned,
+ *   If the filename points to a file an array with only that file is returned.
+ */
+string[] toFiles(string filename)
+{
+    import std.file : isFile, isDir, dirEntries, SpanMode;
+    if (filename.isFile)
+    {
+        return [filename];
+    }
+    if (filename.isDir)
+    {
+        return filename
+            .dirEntries("*.d", SpanMode.breadth)
+            .filter!("a.isFile")
+            .map!("a.name")
+            .array;
+    }
+    import std.format : format;
+    throw new Exception(format!("%s is neither a file nor a directory")(filename));
+}
+
+/**
  * Measure the complexity in a list of modules.
  *
  * Params:
@@ -47,7 +76,12 @@ private Result runOnFile(string file)
 auto runOnFiles(R)(R args)
 if (isInputRange!R && is(ElementType!R == string))
 {
-    return args.map!runOnFile();
+    return args
+        .map!toFiles
+        .joiner
+        .array
+        .sort
+        .map!runOnFile;
 }
 
 /**
