@@ -1,6 +1,6 @@
 import cogito;
 
-import argparse : Main, parseCLIArgs;
+import argparse : CLI;
 import cogito.arguments;
 import std.algorithm;
 import std.sumtype;
@@ -48,7 +48,7 @@ int accumulateResult(Arguments arguments, int accumulator, Result result)
     return nextResult;
 }
 
-mixin Main.parseCLIArgs!(Arguments, (arguments) {
+mixin CLI!Arguments.main!((arguments) {
     try
     {
         return runOnFiles(arguments.files)
